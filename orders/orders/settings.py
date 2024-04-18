@@ -82,8 +82,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'diplom3',
-        'USER': '*****',
-        'PASSWORD': '*****',
+        'USER': 'jeckilla',
+        'PASSWORD': 'lenochka',
         'PORT': '5432',
         'HOST': '127.0.0.1',
     }
@@ -127,6 +127,15 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'backend.User'
+
+REST_FRAMEWORK = {
+    # NON_FIELD_ERRORS_KEY: 'errors',
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "rest_framework.authentication.SessionAuthentication",
+        "rest_framework.authentication.TokenAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticated"],
+}
 
 # Default primary key field type
 
