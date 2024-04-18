@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.validators import UnicodeUsernameValidator
 from django.db import models
 from django_rest_passwordreset.tokens import get_token_generator
+from urllib import response
 
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
@@ -99,7 +100,12 @@ class User(AbstractUser):
 class Shop(models.Model):
     objects = models.manager.Manager()
     name = models.CharField(max_length=255)
-    url = models.CharField(max_length=255)
+    url = models.URLField(verbose_name='Ссылка', null=True, blank=True)
+    filename = models.FileField(upload_to='backend/fixtures/', null=True, blank=True)
+    user = models.OneToOneField(User, verbose_name='Пользователь',
+                                blank=True, null=True,
+                                on_delete=models.CASCADE)
+    state = models.BooleanField(verbose_name='Cтатус получения заказов', default=True)
 
     class Meta:
         verbose_name = 'Магазин'
@@ -121,7 +127,7 @@ class Category(models.Model):
 class Product(models.Model):
     objects = models.manager.Manager()
     name = models.CharField(max_length=255)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Продукт'
