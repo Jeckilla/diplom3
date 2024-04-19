@@ -11,9 +11,9 @@ from yaml import load as load_yaml, Loader
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.request import Request
-from rest_framework.permissions import permission_classes
+# from rest_framework.permissions import permission_classes
 
-from .serializers import ShopSerializer, LoginSerializer, SignUpSerializer
+from .serializers import ShopSerializer, SignUpSerializer
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
                      Product, Category, Shop, User)
 
@@ -116,5 +116,5 @@ class LoginView(APIView):
             }
             return Response(data=response, status=status.HTTP_200_OK)
         else:
-            return Response(data={'message': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(data={'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
