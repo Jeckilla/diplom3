@@ -1,0 +1,23 @@
+shop: DNS
+categories:
+  - id: 51
+    name: Телевизоры
+  - id: 123
+    name: Ноутбуки
+  - id: 3
+    name: Переферия
+
+goods:
+  - id: 5454654
+    category: 51
+    model: "Xiaomi MI TV A2 43"
+    name: "LED-телевизор Xiaomi MI TV A2 43 черный"
+    price: 25990
+    price_rrc: 25999
+    quantity: 13
+    parameters:
+      "Диагональ (дюйм)": 43
+      "Разрешение (пикс)": "4K UltraHD, 3840x2160"
+      "Bluetooth": "есть"
+      "Цвет": "черный"
+      
