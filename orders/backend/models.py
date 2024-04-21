@@ -145,8 +145,8 @@ class ProductInfo(models.Model):
     model = models.CharField(max_length=80, verbose_name='Модель', blank=True)
     external_id = models.CharField(max_length=80, verbose_name='Внешний ИД')
     quantity = models.PositiveIntegerField(verbose_name='Количество')
-    price = models.PositiveIntegerField(verbose_name='Количество')
-    price_rrc = models.PositiveIntegerField(verbose_name='Количество')
+    price = models.PositiveIntegerField(verbose_name='Цена')
+    price_rrc = models.PositiveIntegerField(verbose_name='Цена_ррц')
 
     class Meta:
         verbose_name = 'Информация о продукте'
@@ -182,8 +182,8 @@ class ProductParameter(models.Model):
     value = models.CharField(max_length=255, verbose_name='Значение')
 
     class Meta:
-        verbose_name = 'Параметр'
-        verbose_name_plural = "Список параметров"
+        verbose_name = 'Параметры товара'
+        verbose_name_plural = "Список параметров товара"
         constraints = [
             models.UniqueConstraint(fields=['product_info', 'parameter'], name='unique_product_parameter'),
         ]

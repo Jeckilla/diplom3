@@ -1,7 +1,7 @@
 from django.contrib.auth import authenticate
 from django.core.validators import URLValidator
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from requests import get
 from rest_framework.exceptions import ValidationError
 from rest_framework.status import HTTP_401_UNAUTHORIZED
@@ -11,9 +11,11 @@ from yaml import load as load_yaml, Loader
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.request import Request
+from rest_framework.renderers import TemplateHTMLRenderer
+
 # from rest_framework.permissions import permission_classes
 
-from .serializers import ShopSerializer, SignUpSerializer
+from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
                      Product, Category, Shop, User)
 
@@ -30,8 +32,8 @@ class PartnerUpdate(APIView):
             validate_url = URLValidator()
             try:
                 validate_url(url)
-            except ValidationError:
-                return JsonResponse({'status': False, 'errors': 'Некорректная ссылка'}, status=400)
+            except ValidationError as e:
+                return JsonResponse({'status': False, 'errors': str(e)})
             else:
                 stream = get(url).content
                 data = load_yaml(stream, Loader=Loader)
@@ -61,8 +63,8 @@ class PartnerUpdate(APIView):
                                 parameter_id=parameter_obj.id,
                                 value=value
                             )
-                    return JsonResponse({'status': True})
-                return JsonResponse({'status': False,  'errors': 'Не указаны все необходимые аргументы'})
+                return JsonResponse({'status': True})
+        return JsonResponse({'status': False,  'errors': 'Не указаны все необходимые аргументы'})
 
 
 class ShopList(APIView):
@@ -83,11 +85,12 @@ class SignUpView(generics.GenericAPIView):
 
     def post(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
-        if serializer.is_valid:
+        if serializer.is_valid():
             user = serializer.validated_data
             serializer.save()
             response = {
-                "message": "User created successfuly",
+                "message": f"User created successfuly",
+                "data": serializer.data
             }
             return Response(data=response, status=status.HTTP_201_CREATED)
 
@@ -95,11 +98,12 @@ class SignUpView(generics.GenericAPIView):
 
 
 class LoginView(APIView):
+    serializer_class = LoginSerializer
 
     def get(self, request):
         content = {
             'user': str(request.user),
-            'auth': str(request.auth)
+            'auth': str(request.auth),
         }
         return Response(data=content, status=status.HTTP_200_OK)
 

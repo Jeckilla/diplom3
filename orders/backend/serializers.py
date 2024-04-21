@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
                      Product, Category, Shop, User)
 from rest_framework.authtoken.models import Token
+from rest_framework.validators import ValidationError
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -13,13 +14,22 @@ class UserSerializer(serializers.ModelSerializer):
 
 class SignUpSerializer(serializers.ModelSerializer):
     """Сериализатор для входа в систему"""
-    email = serializers.EmailField(max_length=80)
-    username = serializers.CharField(max_length=80)
-    password = serializers.CharField(min_length=6, max_length=20, write_only=True)
+    first_name = serializers.CharField(max_length=100, style={'placeholder': 'Имя'})
+    last_name = serializers.CharField(max_length=100, style={'placeholder': 'Фамилия'})
+    email = serializers.EmailField(max_length=80, style={'placeholder': 'Email', 'autofocus': True})
+    username = serializers.CharField(max_length=80, style={'placeholder': 'Username', 'autofocus': True})
+    password = serializers.CharField(min_length=6, style={'input_type': 'password', 'placeholder': 'Password'}, max_length=20, write_only=True)
 
     class Meta:
         model = User
-        fields = ['email', 'username', 'password']
+        fields = ['first_name', 'last_name', 'email', 'username', 'password']
+
+    def validate(self, attrs):
+        email_exists = User.objects.filter(email=attrs['email']).exists()
+
+        if email_exists:
+            raise ValidationError("Email is already been used.")
+        return super().validate(attrs)
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -28,6 +38,17 @@ class SignUpSerializer(serializers.ModelSerializer):
         Token.objects.create(user=user)
         user.save()
         return user
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField(
+        max_length=100,
+        style={'placeholder': 'Email', 'autofocus': True}
+    )
+    password = serializers.CharField(
+        max_length=100,
+        style={'input_type': 'password', 'placeholder': 'Password'}
+    )
 
 
 class ShopSerializer(serializers.ModelSerializer):
