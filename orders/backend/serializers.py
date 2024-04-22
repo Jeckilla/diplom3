@@ -88,23 +88,15 @@ class ProductInfoSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     """Сериализатор продукта"""
+    id = serializers.IntegerField()
     name = serializers.CharField(max_length=100)
     category = serializers.SlugRelatedField(queryset=Category.objects.all(), slug_field='name')
     product_info = ProductInfoSerializer(many=True)
 
     class Meta:
         model = Product
-        fields = ['name', 'category',
+        fields = ['id', 'name', 'category',
                   'product_info']
-
-
-class OrdersSerializer(serializers.ModelSerializer):
-    """Сериализатор заказа"""
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    contact = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    class Meta:
-        model = Order
-        fields = ['id', 'created_at', 'state']
 
 
 class ContactSerializer(serializers.ModelSerializer):
@@ -117,9 +109,31 @@ class ContactSerializer(serializers.ModelSerializer):
     building = serializers.CharField(max_length=15)
     apartment = serializers.CharField(max_length=15)
     phone = serializers.CharField(max_length=11)
+
     class Meta:
         model = Contact
         fields = ['user', 'city', 'street', 'house', 'structure', 'building', 'apartment', 'phone']
 
     def create(self, validated_data):
         return super().create(validated_data)
+
+
+class OrdersSerializer(serializers.ModelSerializer):
+    """Сериализатор заказа"""
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    contact = ContactSerializer(many=True)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'created_at', 'state', 'user', 'contact']
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    """Сериализатор корзины"""
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    product_info = ProductSerializer()
+
+    class Meta:
+        model = OrderItem
+        fields = ['product_info__product_id', 'user', 'product_info', 'product_info__quantity', 'product_info__price']
+

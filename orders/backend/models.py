@@ -229,6 +229,7 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     objects = models.manager.Manager()
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     order = models.ForeignKey(Order, on_delete=models.CASCADE)
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
@@ -241,6 +242,9 @@ class OrderItem(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['order', 'product'], name='unique_order_item'),
         ]
+
+    def __str__(self):
+        return f'Заказ {self.order} | Товар {self.product} | Количество {self.quantity}'
 
 
 class ConfirmEmailToken(models.Model):
