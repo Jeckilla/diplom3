@@ -53,8 +53,40 @@ class LoginSerializer(serializers.Serializer):
 
 class ShopSerializer(serializers.ModelSerializer):
     """Сериализатор магазина"""
+    url = serializers.URLField(max_length=300,
+                               style={'placeholder': 'Email'},
+                               allow_blank=True)
     filename = serializers.FileField(use_url=True, allow_empty_file=True)
 
     class Meta:
         model = Shop
         fields = ['name', 'url', 'filename']
+
+
+class UpdatePartnerSerializer(serializers.ModelSerializer):
+    """Сериализатор для обновления информации о товарах магазина"""
+    url = serializers.URLField(max_length=300,
+                               style={'placeholder': 'Email'},
+                               allow_blank=True)
+    class Meta:
+        model = Shop
+        fields = ['name', 'url']
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    """Сериализатор продукта"""
+    name = serializers.CharField(max_length=100)
+    category = serializers.SlugRelatedField(queryset=Category.objects.all(), slug_field='name')
+
+    class Meta:
+        model = Product
+        fields = ['name', 'category']
+
+
+class OrdersSerializer(serializers.ModelSerializer):
+    """Сериализатор заказа"""
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    contact = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    class Meta:
+        model = Order
+        fields = ['id', 'created_at', 'state']

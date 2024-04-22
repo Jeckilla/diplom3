@@ -15,7 +15,7 @@ from rest_framework.renderers import TemplateHTMLRenderer
 
 # from rest_framework.permissions import permission_classes
 
-from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer
+from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrdersSerializer
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
                      Product, Category, Shop, User)
 
@@ -122,3 +122,21 @@ class LoginView(APIView):
         else:
             return Response(data={'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+class ProductsList(APIView):
+    def get(self, request):
+        products = Product.objects.all()
+        serializer = ProductSerializer
+        return JsonResponse(serializer.data, safe=False)
+
+
+class OrdersList(APIView):
+
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+                                status=HTTP_401_UNAUTHORIZED)
+        else:
+            orders = Order.objects.filter(user_id=request.user.id).order_by('-created_at')
+            serializer = OrdersSerializer
+            return JsonResponse(serializer.data, safe=False)
