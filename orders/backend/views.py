@@ -2,10 +2,14 @@ from django.contrib.auth import authenticate
 from django.core.validators import URLValidator
 from django.http import JsonResponse
 from django.shortcuts import render, get_object_or_404
+from django_filters import OrderingFilter
+from django_filters.rest_framework import DjangoFilterBackend
 from requests import get
 from rest_framework.exceptions import ValidationError
+from rest_framework.filters import SearchFilter
 from rest_framework.status import HTTP_401_UNAUTHORIZED
 from rest_framework.views import APIView
+from rest_framework.viewsets import ModelViewSet
 from ujson import loads as load_json
 from yaml import load as load_yaml, Loader
 from rest_framework import generics, status
@@ -13,11 +17,13 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.renderers import TemplateHTMLRenderer
 
+from .permissions import IsOwnerOrReadOnly
 # from rest_framework.permissions import permission_classes
 
-from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrdersSerializer
+from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrdersSerializer, \
+    ContactSerializer
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
-                     Product, Category, Shop, User)
+                     Product, Category, Shop, User, Contact)
 
 
 class PartnerUpdate(APIView):
@@ -124,9 +130,13 @@ class LoginView(APIView):
 
 
 class ProductsList(APIView):
+    filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    search_fields = ['model', ]
+    filterset_fields = ['name', 'category', 'model', 'shop', 'price', 'quantity']
+
     def get(self, request):
         products = Product.objects.all()
-        serializer = ProductSerializer
+        serializer = ProductSerializer(products, many=True)
         return JsonResponse(serializer.data, safe=False)
 
 
@@ -140,3 +150,42 @@ class OrdersList(APIView):
             orders = Order.objects.filter(user_id=request.user.id).order_by('-created_at')
             serializer = OrdersSerializer
             return JsonResponse(serializer.data, safe=False)
+
+
+class ContactViewSet(ModelViewSet):
+
+    queryset = Contact.objects.all()
+    serializer_class = ContactSerializer
+
+
+
+# class ContactView(APIView):
+#
+#     def get(self, request):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+#                                 status=HTTP_401_UNAUTHORIZED)
+#         else:
+#             contacts = Contact.objects.filter(user_id=request.user.id)
+#             serializer = ContactSerializer
+#             return JsonResponse(serializer.data, safe=False)
+#
+#     def post(self, request):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+#                                 status=HTTP_401_UNAUTHORIZED)
+#         else:
+#             serializer = ContactSerializer(data=request.data)
+#             if serializer.is_valid():
+#                 serializer.save()
+#                 return Response(serializer.data, status=status.HTTP_201_CREATED)
+#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#     def delete(self, request):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+#                                 status=HTTP_401_UNAUTHORIZED)
+#         else:
+#             Contact.objects.filter(user_id=request.user.id).delete()
+#             return Response(status=status.HTTP_204_NO_CONTENT)
+

@@ -1,6 +1,7 @@
+from django.contrib.auth import authenticate
 from rest_framework import serializers
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
-                     Product, Category, Shop, User)
+                     Product, Category, Shop, User, Contact)
 from rest_framework.authtoken.models import Token
 from rest_framework.validators import ValidationError
 
@@ -51,6 +52,7 @@ class LoginSerializer(serializers.Serializer):
     )
 
 
+
 class ShopSerializer(serializers.ModelSerializer):
     """Сериализатор магазина"""
     url = serializers.URLField(max_length=300,
@@ -73,14 +75,27 @@ class UpdatePartnerSerializer(serializers.ModelSerializer):
         fields = ['name', 'url']
 
 
+class ProductInfoSerializer(serializers.ModelSerializer):
+    """Сериализатор информации о продукте"""
+    shop = serializers.SlugRelatedField(queryset=Shop.objects.all(), slug_field='name', allow_null=True)
+    model = serializers.CharField(max_length=80, allow_blank=True)
+    quantity = serializers.IntegerField()
+    price = serializers.IntegerField()
+    class Meta:
+        model = ProductInfo
+        fields = ['shop', 'model', 'price', 'quantity']
+
+
 class ProductSerializer(serializers.ModelSerializer):
     """Сериализатор продукта"""
     name = serializers.CharField(max_length=100)
     category = serializers.SlugRelatedField(queryset=Category.objects.all(), slug_field='name')
+    product_info = ProductInfoSerializer(many=True)
 
     class Meta:
         model = Product
-        fields = ['name', 'category']
+        fields = ['name', 'category',
+                  'product_info']
 
 
 class OrdersSerializer(serializers.ModelSerializer):
@@ -90,3 +105,21 @@ class OrdersSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'created_at', 'state']
+
+
+class ContactSerializer(serializers.ModelSerializer):
+    """Сериализатор контактов пользователя"""
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    city = serializers.CharField(max_length=50)
+    street = serializers.CharField(max_length=100)
+    house = serializers.CharField(max_length=15)
+    structure = serializers.CharField(max_length=15)
+    building = serializers.CharField(max_length=15)
+    apartment = serializers.CharField(max_length=15)
+    phone = serializers.CharField(max_length=11)
+    class Meta:
+        model = Contact
+        fields = ['user', 'city', 'street', 'house', 'structure', 'building', 'apartment', 'phone']
+
+    def create(self, validated_data):
+        return super().create(validated_data)
