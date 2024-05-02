@@ -130,10 +130,13 @@ class OrdersSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     """Сериализатор корзины"""
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    product_info = ProductSerializer()
-
     class Meta:
         model = OrderItem
-        fields = ['product_info__product_id', 'user', 'product_info', 'product_info__quantity', 'product_info__price']
+        fields = ['id', 'order', 'product_info', 'quantity']
+        read_only_fields = ('id',)
+        extra_kwargs = {
+            'order': {'write_only': True}
+        }
+
+
 

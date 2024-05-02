@@ -116,7 +116,7 @@ class Shop(models.Model):
 class Category(models.Model):
     objects = models.manager.Manager()
     name = models.CharField(max_length=255)
-    shops = models.ForeignKey(Shop, on_delete=models.CASCADE)
+    shops = models.ForeignKey(Shop, verbose_name='Магазины', related_name='categories', on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = 'Категория'
@@ -126,8 +126,10 @@ class Category(models.Model):
 
 class Product(models.Model):
     objects = models.manager.Manager()
-    name = models.CharField(max_length=255)
-    category = models.ForeignKey(Category, related_name='products', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255, verbose_name='Название')
+    category = models.ForeignKey(Category, verbose_name='Категория',
+                                 related_name='products', on_delete=models.CASCADE,
+                                 null=True, blank=True)
 
     class Meta:
         verbose_name = 'Продукт'
@@ -206,7 +208,10 @@ class Contact(models.Model):
         verbose_name_plural = "Список контактов пользователя"
 
     def __str__(self):
-        return f'Заказчик: {self.user}, {self.city}, {self.street}, {self.house}, {self.apartment}.'
+        return f'Заказчик: {self.user}, Адрес: {self.city}, {self.street}, {self.house}, {self.apartment}.'
+
+    # def __iter__(self):
+    #     return iter[self.city, self.street, self.house, self.apartment, self.phone]
 
 
 class Order(models.Model):
@@ -229,10 +234,26 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     objects = models.manager.Manager()
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
-    shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
+    user = models.ForeignKey(User,
+                            verbose_name='Покупатель',
+                            related_name='ordered_items',
+                            blank=True,
+                            on_delete=models.CASCADE)
+    order = models.ForeignKey(Order,
+                            verbose_name='Заказ',
+                            related_name='ordered_items',
+                            blank=True,
+                            on_delete=models.CASCADE)
+    product_info = models.ForeignKey(ProductInfo,
+                            verbose_name='Информация о продукте',
+                            related_name='ordered_items',
+                            blank=True,
+                            on_delete=models.CASCADE)
+    shop = models.ForeignKey(Shop,
+                            verbose_name='Магазин',
+                            related_name='ordered_items',
+                            blank=True,
+                            on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
 
 
@@ -240,7 +261,7 @@ class OrderItem(models.Model):
         verbose_name = 'Заказанный продукт'
         verbose_name_plural = "Список заказанных продуктов"
         constraints = [
-            models.UniqueConstraint(fields=['order', 'product'], name='unique_order_item'),
+            models.UniqueConstraint(fields=['order_id', 'product_info'], name='unique_order_item'),
         ]
 
     def __str__(self):

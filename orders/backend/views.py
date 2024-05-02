@@ -10,12 +10,12 @@ from django_filters.rest_framework import DjangoFilterBackend
 from requests import get
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST
+from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from ujson import loads as load_json
 from yaml import load as load_yaml, Loader
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.renderers import TemplateHTMLRenderer
@@ -74,10 +74,19 @@ class LoginView(APIView):
         else:
             return Response(data={'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
-    def logout(self, request):
-        request.user.auth_token.delete()
-        auth.logout(request)
+
+class LogoutView(APIView):
+    serializer_class = LoginSerializer
+
+    def get(self, request):
         return Response(status=status.HTTP_200_OK)
+
+    def post(self, request):
+        if request.user.is_authenticated:
+            request.user.auth_token.delete()
+            auth.logout(request)
+            return Response(status=status.HTTP_200_OK)
+        return Response(status=status.HTTP_401_UNAUTHORIZED)
 
 
 class PartnerUpdate(APIView):
@@ -168,96 +177,151 @@ class ContactViewSet(ModelViewSet):
     serializer_class = ContactSerializer
 
 
-class BascketView(APIView):
+# class BascketView(APIView):
+#
+#     def get(self, request, *args, **kwargs):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+#                                 status=HTTP_401_UNAUTHORIZED)
+#         else:
+#             bascket = Order.objects.filter(user_id=request.user.id, state='basket').prefetch_related(
+#                 'orderitems__product_info__product__category',
+#                 'orderitems__product_info__product_parameters__parameter').annotate(
+#
+#                 ).distinct()
+#             serializer = OrdersSerializer(bascket, many=True)
+#             return JsonResponse(serializer.data, safe=False)
+#
+#     def post(self, request, *args, **kwargs):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+#                                 status=HTTP_401_UNAUTHORIZED)
+#
+#         items = request.data.get('items')
+#         if items:
+#             try:
+#                 items_dict = load_json(items)
+#             except ValueError:
+#                 return JsonResponse({'detail': 'Неверный формат запроса'}, status=HTTP_400_BAD_REQUEST)
+#             else:
+#                 bascket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+#                 objects_created = 0
+#                 for order_item in items_dict:
+#                     order_item.update({'order': bascket.id})
+#                     serializer = OrderItemSerializer(data=order_item)
+#                     if serializer.is_valid():
+#                         try:
+#                             serializer.save()
+#                         except IntegrityError as error:
+#                             return JsonResponse({'detail': str(error)}, status=HTTP_400_BAD_REQUEST)
+#                         else:
+#                             objects_created += 1
+#
+#                     else:
+#
+#                         return JsonResponse({'detail': serializer.errors}, status=HTTP_400_BAD_REQUEST)
+#
+#                 return JsonResponse({'created': objects_created})
+#         return JsonResponse({'detail': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
+#
+#     def delete(self, request, *args, **kwargs):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+#                                 status=HTTP_401_UNAUTHORIZED)
+#
+#         items = request.data.get('items')
+#         if items:
+#             items_list = items.split(',')
+#             bascket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+#             query = Q()
+#             objects_deleted = False
+#             for order_item_id in items_list:
+#                 query = query | Q(id=order_item_id)
+#             if query:
+#                 OrderItem.objects.filter(query).delete()
+#                 objects_deleted = True
+#
+#             if objects_deleted:
+#                 deleted_count = OrderItem.objects.filter(query).delete()[0]
+#                 return JsonResponse({'Status': True, 'deleted': deleted_count})
+#         return JsonResponse({'detail': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
+#
+#     def put(self, request, *args, **kwargs):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+#                                 status=HTTP_401_UNAUTHORIZED)
+#
+#         items = request.data.get('items')
+#         if items:
+#             try:
+#                 items_dict = load_json(items)
+#             except ValueError:
+#                 return JsonResponse({'detail': 'Неверный формат запроса'}, status=HTTP_400_BAD_REQUEST)
+#             else:
+#                 bascket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+#                 objects_updated = 0
+#                 for order_item in items_dict:
+#                     if type(order_item[id]) == int and type(order_item['quantity']) == int:
+#                         objects_updated += OrderItem.objects.filter(order_id=bascket.id, id=order_item['id']).update(
+#                             quantity=order_item['quantity'])
+#
+#                 return JsonResponse({'updated': objects_updated, 'status': status.HTTP_200_OK})
+#         return JsonResponse({'detail': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
+#
 
-    def get(self, request, *args, **kwargs):
+
+class OrderItemViewSet(viewsets.ModelViewSet):
+
+    queryset = OrderItem.objects.all()
+    serializer_class = OrderItemSerializer
+
+    def create(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
-        else:
-            bascket = Order.objects.filter(user_id=request.user.id, state='basket').prefetch_related(
-                'orderitems__product_info__product__category',
-                'orderitems__product_info__product_parameters__parameter').annotate(
 
-                ).distinct()
-            serializer = OrdersSerializer(bascket, many=True)
-            return JsonResponse(serializer.data, safe=False)
-
-    def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'detail': 'Authentication credentials were not provided.'},
-                                status=HTTP_401_UNAUTHORIZED)
-
-        items = request.data.get('items')
-        if items:
+        items_sting = request.data.get('items')
+        if items_sting:
             try:
-                items_dict = load_json(items)
+                items_dict = load_json(items_sting)
             except ValueError:
-                return JsonResponse({'detail': 'Неверный формат запроса'}, status=HTTP_400_BAD_REQUEST)
+                return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
             else:
-                bascket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+                user = request.user
+                basket, _ = Order.objects.get_or_create(user_id=request.user.id,
+                                                        state='basket')
                 objects_created = 0
-                for order_item in items_dict:
-                    order_item.update({'order': bascket.id})
-                    serializer = OrderItemSerializer(data=order_item)
+                for order_item_data in items_dict:
+                    order_item_data.update({'order': basket.id})
+                    serializer = OrderItemSerializer(data=order_item_data)
                     if serializer.is_valid():
                         try:
                             serializer.save()
                         except IntegrityError as error:
-                            return JsonResponse({'detail': str(error)}, status=HTTP_400_BAD_REQUEST)
+                            return JsonResponse({'Status': False, 'Errors': str(error)}, status=HTTP_400_BAD_REQUEST)
                         else:
                             objects_created += 1
+                return JsonResponse(serializer.data, status=HTTP_201_CREATED)
 
-                    else:
+            return JsonResponse({'Status': False, 'Errors': 'Invalid serializer data'}, status=HTTP_400_BAD_REQUEST)
 
-                        return JsonResponse({'detail': serializer.errors}, status=HTTP_400_BAD_REQUEST)
+        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
 
-                return JsonResponse({'created': objects_created})
-        return JsonResponse({'detail': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
-
-    def delete(self, request, *args, **kwargs):
+    def update(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
+        else:
+            partial = kwargs.pop('partial', False)
+            instance = self.get_object()
+            serializer = self.get_serializer(instance, data=request.data, partial=partial)
+            serializer.is_valid(raise_exception=True)
+            self.perform_update(serializer)
 
-        items = request.data.get('items')
-        if items:
-            items_list = items.split(',')
-            bascket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
-            query = Q()
-            objects_deleted = False
-            for order_item_id in items_list:
-                query = query | Q(id=order_item_id)
-            if query:
-                OrderItem.objects.filter(query).delete()
-                objects_deleted = True
+            if getattr(instance, '_prefetched_objects_cache', None):
+                # If 'prefetch_related' has been applied to a queryset, we need to
+                # forcibly invalidate the prefetch cache on the instance.
+                instance._prefetched_objects_cache = {}
 
-            if objects_deleted:
-                deleted_count = OrderItem.objects.filter(query).delete()[0]
-                return JsonResponse({'Status': True, 'deleted': deleted_count})
-        return JsonResponse({'detail': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
-
-    def put(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'detail': 'Authentication credentials were not provided.'},
-                                status=HTTP_401_UNAUTHORIZED)
-
-        items = request.data.get('items')
-        if items:
-            try:
-                items_dict = load_json(items)
-            except ValueError:
-                return JsonResponse({'detail': 'Неверный формат запроса'}, status=HTTP_400_BAD_REQUEST)
-            else:
-                bascket, _ = Order.objects.get_or_create(user_id=request.user.id, state='basket')
-                objects_updated = 0
-                for order_item in items_dict:
-                    if type(order_item[id]) == int and type(order_item['quantity']) == int:
-                        objects_updated += OrderItem.objects.filter(order_id=bascket.id, id=order_item['id']).update(
-                            quantity=order_item['quantity'])
-
-                return JsonResponse({'updated': objects_updated, 'status': status.HTTP_200_OK})
-        return JsonResponse({'detail': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
-
-
+            return Response(serializer.data)
 
