@@ -112,6 +112,9 @@ class Shop(models.Model):
         verbose_name_plural = "Список магазинов"
         ordering = ('-name',)
 
+    def __str__(self):
+        return self.name
+
 
 class Category(models.Model):
     objects = models.manager.Manager()
@@ -122,6 +125,9 @@ class Category(models.Model):
         verbose_name = 'Категория'
         verbose_name_plural = "Список категорий"
         ordering = ('-name',)
+
+    def __str__(self):
+        return self.name
 
 
 class Product(models.Model):
@@ -157,6 +163,9 @@ class ProductInfo(models.Model):
             models.UniqueConstraint(fields=['product', 'shop', 'external_id'], name='unique_product_info'),
         ]
 
+    def __str__(self):
+        return self.product.name
+
 
 class Parameter(models.Model):
     objects = models.manager.Manager()
@@ -189,6 +198,9 @@ class ProductParameter(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['product_info', 'parameter'], name='unique_product_parameter'),
         ]
+
+    def __str__(self):
+        return self.parameter.name
 
 
 class Contact(models.Model):
@@ -237,24 +249,28 @@ class OrderItem(models.Model):
     user = models.ForeignKey(User,
                             verbose_name='Покупатель',
                             related_name='ordered_items',
-                            blank=True,
+                            blank=True, null=True,
                             on_delete=models.CASCADE)
+
     order = models.ForeignKey(Order,
                             verbose_name='Заказ',
                             related_name='ordered_items',
                             blank=True,
                             on_delete=models.CASCADE)
+
     product_info = models.ForeignKey(ProductInfo,
                             verbose_name='Информация о продукте',
                             related_name='ordered_items',
                             blank=True,
                             on_delete=models.CASCADE)
+
     shop = models.ForeignKey(Shop,
                             verbose_name='Магазин',
                             related_name='ordered_items',
                             blank=True,
                             on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
+
+    quantity = models.PositiveIntegerField(verbose_name='Количество', default=0)
 
 
     class Meta:
@@ -265,7 +281,7 @@ class OrderItem(models.Model):
         ]
 
     def __str__(self):
-        return f'Заказ {self.order} | Товар {self.product} | Количество {self.quantity}'
+        return f'Заказ {self.order} | Товар {self.product_info} | Количество {self.quantity}'
 
 
 class ConfirmEmailToken(models.Model):

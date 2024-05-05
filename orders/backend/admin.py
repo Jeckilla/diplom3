@@ -4,6 +4,10 @@ from django.contrib.auth.admin import UserAdmin
 from .models import (User, Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, \
                  ConfirmEmailToken, Contact)
 
+class ContactInline(admin.TabularInline):
+    model = Contact
+    extra = 1
+
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
@@ -11,6 +15,7 @@ class CustomUserAdmin(UserAdmin):
     Панель управления пользователями
     """
     model = User
+    inlines = (ContactInline, )
 
     fieldsets = (
         (None, {'fields': ('email', 'password', 'type')}),
@@ -35,46 +40,52 @@ class CategoryAdmin(admin.ModelAdmin):
     list_filter = ['name',]
 
 
+class ProductParameterInline(admin.TabularInline):
+    model = ProductParameter
+    fields = ['product_info', 'parameter', 'value']
+
+
+@admin.register(ProductParameter)
+class ProductParameterAdmin(admin.ModelAdmin):
+    list_display = ['id', 'product_info', 'parameter', 'value']
+    list_filter = ['product_info', 'parameter']
+
+
+class ProductInfoInline(admin.TabularInline):
+    model = ProductInfo
+    fields = ['product', 'quantity', 'price', 'price_rrc', 'shop', 'model', 'external_id']
+    extra = 1
+
+
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
+    inlines = [ProductInfoInline, ]
     list_display = ['id', 'name', 'category']
     list_filter = ['category',]
 
 
 @admin.register(ProductInfo)
 class ProductInfoAdmin(admin.ModelAdmin):
-    list_display = ['product', 'shop', 'quantity', 'price', 'price_rrc']
-    list_filter = ['shop', 'quantity', 'price']
+    inlines = [ProductParameterInline, ]
+    list_display = ['product', 'quantity', 'price', 'price_rrc']
+    list_filter = ['quantity', 'price']
 
 
 @admin.register(Parameter)
 class ParameterAdmin(admin.ModelAdmin):
+    inline = [ProductParameterInline, ]
     list_display = ['name']
 
 
-@admin.register(ProductParameter)
-class ProductParameterAdmin(admin.ModelAdmin):
-    list_display = ['product_info', 'parameter', 'value']
-    list_filter = ['parameter',]
+class OrderItemInline(admin.TabularInline):
+    model = OrderItem
+    fields = ['shop', 'product_info', 'quantity']
 
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['user', 'state', 'contact']
-    list_filter = ['user', 'state']
-
-
-
-@admin.register(OrderItem)
-class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ['order', 'product_info', 'shop', 'quantity']
-    list_filter = ['order', 'shop', 'quantity']
-
-
-@admin.register(Contact)
-class ContactAdmin(admin.ModelAdmin):
-    list_display = ['user', 'city', 'street', 'phone']
-    list_filter = ['user', 'city', 'street']
+    inlines = [OrderItemInline, ]
+    list_display = ['id', 'created_at', 'state', 'user', 'contact']
 
 
 @admin.register(ConfirmEmailToken)
