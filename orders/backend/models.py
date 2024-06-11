@@ -222,8 +222,8 @@ class Contact(models.Model):
     def __str__(self):
         return f'Заказчик: {self.user}, Адрес: {self.city}, {self.street}, {self.house}, {self.apartment}.'
 
-    # def __iter__(self):
-    #     return iter[self.city, self.street, self.house, self.apartment, self.phone]
+    def __iter__(self):
+        return iter[self.city, self.street, self.house, self.apartment, self.phone]
 
 
 class Order(models.Model):

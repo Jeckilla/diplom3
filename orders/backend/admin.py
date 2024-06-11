@@ -4,6 +4,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import (User, Shop, Category, Product, ProductInfo, Parameter, ProductParameter, Order, OrderItem, \
                  ConfirmEmailToken, Contact)
 
+
 class ContactInline(admin.TabularInline):
     model = Contact
     extra = 1
@@ -34,12 +35,6 @@ class ShopAdmin(admin.ModelAdmin):
     list_filter = ['name', 'state']
 
 
-@admin.register(Category)
-class CategoryAdmin(admin.ModelAdmin):
-    list_display = ['id', 'name']
-    list_filter = ['name',]
-
-
 class ProductParameterInline(admin.TabularInline):
     model = ProductParameter
     fields = ['product_info', 'parameter', 'value']
@@ -61,14 +56,27 @@ class ProductInfoInline(admin.TabularInline):
 class ProductAdmin(admin.ModelAdmin):
     inlines = [ProductInfoInline, ]
     list_display = ['id', 'name', 'category']
-    list_filter = ['category',]
+    list_filter = ['category']
+
+
+class ProductInline(admin.TabularInline):
+    model = Product
+    fields = ['name', 'category']
+    extra = 1
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    inlines = [ProductInline, ]
+    list_display = ['id', 'name']
+    list_filter = ['name',]
 
 
 @admin.register(ProductInfo)
 class ProductInfoAdmin(admin.ModelAdmin):
     inlines = [ProductParameterInline, ]
-    list_display = ['product', 'quantity', 'price', 'price_rrc']
-    list_filter = ['quantity', 'price']
+    list_display = ['product', 'shop', 'model', 'quantity', 'price', 'price_rrc']
+    list_filter = ['shop', 'model', 'quantity', 'price']
 
 
 @admin.register(Parameter)
@@ -86,6 +94,12 @@ class OrderItemInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline, ]
     list_display = ['id', 'created_at', 'state', 'user', 'contact']
+
+
+@admin.register(Contact)
+class ContactAdmin(admin.ModelAdmin):
+    list_display = ['user', 'city', 'street', 'house', 'structure', 'building', 'apartment', 'phone']
+    list_filter = ['city', 'street', 'house', 'structure', 'building']
 
 
 @admin.register(ConfirmEmailToken)

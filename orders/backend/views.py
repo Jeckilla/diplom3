@@ -10,6 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from requests import get
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
@@ -20,7 +21,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.renderers import TemplateHTMLRenderer
 
-from .permissions import IsOwnerOrReadOnly
+from .permissions import IsOwnerOrReadOnly, IsOwner
 # from rest_framework.permissions import permission_classes
 
 from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrdersSerializer, \
@@ -142,6 +143,7 @@ class ShopList(APIView):
         serializer = ShopSerializer(shops, many=True)
         return JsonResponse(serializer.data, safe=False)
 
+
 class ShopDetails(APIView):
     def get(self, request):
         shops = Shop.objects.filter(user_id=request.shop.id)
@@ -175,6 +177,7 @@ class ContactViewSet(ModelViewSet):
 
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
+    permission_classes = [IsOwner]
 
 
 # class BascketView(APIView):
@@ -270,42 +273,87 @@ class ContactViewSet(ModelViewSet):
 #
 
 
+class NewOrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrdersSerializer
+
+    def create(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return Response({'detail': 'Authentication credentials were not provided.'},
+                                status=HTTP_401_UNAUTHORIZED)
+        else:
+            serializer = OrdersSerializer(data=request.data, context={'request': request}, many=True)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=HTTP_201_CREATED)
+            return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+    def process_list(self,request):
+        if request.method == 'POST':
+            items_string = request.POST.get('items')
+            items_list = items_string.split('\n') # Split the textarea input by new lines
+        # Process the items_list further as needed
+
+
 class OrderItemViewSet(viewsets.ModelViewSet):
 
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
 
     def create(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'detail': 'Authentication credentials were not provided.'},
-                                status=HTTP_401_UNAUTHORIZED)
+        items_string = request.data
+        if items_string is None or items_string == '':
+            return ValidationError('No data to process')
 
-        items_sting = request.data.get('items')
-        if items_sting:
-            try:
-                items_dict = load_json(items_sting)
-            except ValueError:
-                return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
-            else:
-                user = request.user
-                basket, _ = Order.objects.get_or_create(user_id=request.user.id,
-                                                        state='basket')
-                objects_created = 0
-                for order_item_data in items_dict:
-                    order_item_data.update({'order': basket.id})
-                    serializer = OrderItemSerializer(data=order_item_data)
-                    if serializer.is_valid():
-                        try:
-                            serializer.save()
-                        except IntegrityError as error:
-                            return JsonResponse({'Status': False, 'Errors': str(error)}, status=HTTP_400_BAD_REQUEST)
-                        else:
-                            objects_created += 1
-                return JsonResponse(serializer.data, status=HTTP_201_CREATED)
+        try:
+            items_dict = load_json(items_string)
+        except ValueError:
+            return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
 
-            return JsonResponse({'Status': False, 'Errors': 'Invalid serializer data'}, status=HTTP_400_BAD_REQUEST)
+        order = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+        objects_created = 0
+        for order_item_data in items_dict:
+            order_item_data['order'] = order.id
+            serializer = OrderItemSerializer(data=order_item_data, many=True)
+            if serializer.is_valid():
+                try:
+                    serializer.save()
+                except IntegrityError as error:
+                    return JsonResponse({'Status': False, 'Errors': str(error)}, status=HTTP_400_BAD_REQUEST)
+                else:
+                    objects_created += 1
+
+        if objects_created > 0:
+            Order.objects.filter(id=order.id).update(state='new')
+            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
 
         return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
+        # if serializer.is_valid():
+        #     user = request.user
+        #     basket, _ = Order.objects.get_or_create(user_id=request.user.id,
+        #                                             state='basket')
+        #     serializer.save(order=basket)
+        #     return Response(serializer.data, status=HTTP_201_CREATED)
+        # else:
+        #     return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+        #         for order_item_data in items_dict:
+        #             order_item_data.update({'order': basket.id})
+        #
+        #             if serializer.is_valid():
+        #                 try:
+        #                     serializer.save()
+        #                 except IntegrityError as error:
+        #                     return JsonResponse({'Status': False, 'Errors': str(error)}, status=HTTP_400_BAD_REQUEST)
+        #                 else:
+        #                     objects_created += 1
+        #         if objects_created > 0:
+        #             Order.objects.filter(id=basket.id).update(state='new')
+        #         return JsonResponse(serializer.data, status=HTTP_201_CREATED)
+        #
+        #     return JsonResponse({'Status': False, 'Errors': 'Invalid serializer data'}, status=HTTP_400_BAD_REQUEST)
+        #
+        # return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
 
     def update(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
