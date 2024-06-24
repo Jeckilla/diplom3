@@ -2,12 +2,13 @@ from django_rest_passwordreset.views import reset_password_request_token, reset_
 from rest_framework.routers import DefaultRouter
 from django.urls import path
 from .views import PartnerUpdate, ShopList, ShopDetails, LoginView, SignUpView, ContactViewSet, ProductsList, \
-    OrdersList, LogoutView, OrderItemViewSet, NewOrderViewSet
+    OrdersList, LogoutView, OrderItemViewSet, NewOrderViewSet, CategoryViewSet
 
 r = DefaultRouter()
 r.register('contacts', ContactViewSet, basename='contact')
 r.register('basket', OrderItemViewSet, basename='basket')
 r.register('orders', NewOrderViewSet, basename='order')
+r.register('categories', CategoryViewSet, basename='category')
 
 
 urlpatterns = [

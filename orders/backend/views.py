@@ -10,6 +10,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from requests import get
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from rest_framework.views import APIView
@@ -25,7 +26,7 @@ from .permissions import IsOwnerOrReadOnly, IsOwner
 # from rest_framework.permissions import permission_classes
 
 from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrdersSerializer, \
-    ContactSerializer, OrderItemSerializer
+    ContactSerializer, OrderItemSerializer, CategorySerializer
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
                      Product, Category, Shop, User, Contact)
 
@@ -151,6 +152,12 @@ class ShopDetails(APIView):
         shops = Shop.objects.get(id=pk)
         serializer = ShopSerializer(shops)
         return Response(serializer.data)
+
+
+class CategoryViewSet(ModelViewSet):
+    """View for getting list of categories"""
+    queryset = Category.objects.all()
+    serializer_class = CategorySerializer
 
 
 class ProductsList(APIView):
@@ -375,4 +382,5 @@ class OrderItemViewSet(viewsets.ModelViewSet):
                 instance._prefetched_objects_cache = {}
 
             return Response(serializer.data)
+
 

@@ -77,6 +77,13 @@ class UpdatePartnerSerializer(serializers.ModelSerializer):
         fields = ['name', 'url']
 
 
+class CategorySerializer(serializers.ModelSerializer):
+    """Сериализатор категории"""
+    class Meta:
+        model = Category
+        fields = ['id', 'name']
+
+
 class ProductInfoSerializer(serializers.ModelSerializer):
     """Сериализатор информации о продукте"""
     shop = serializers.SlugRelatedField(queryset=Shop.objects.all(), slug_field='name', allow_null=True)
