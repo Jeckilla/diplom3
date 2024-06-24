@@ -138,17 +138,20 @@ class PartnerUpdate(APIView):
 
 
 class ShopList(APIView):
+    """View for getting list of shops"""
     def get(self, request):
         shops = Shop.objects.all()
         serializer = ShopSerializer(shops, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
 
 
 class ShopDetails(APIView):
-    def get(self, request):
-        shops = Shop.objects.filter(user_id=request.shop.id)
-        serializer = ShopSerializer(shops, many=True)
-        return JsonResponse(serializer.data, safe=False)
+    """View for getting details of shop"""
+    def get(self, request, pk):
+        shops = Shop.objects.get(id=pk)
+        serializer = ShopSerializer(shops)
+        return Response(serializer.data)
+
 
 class ProductsList(APIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
@@ -158,7 +161,7 @@ class ProductsList(APIView):
     def get(self, request):
         products = Product.objects.all()
         serializer = ProductSerializer(products, many=True)
-        return JsonResponse(serializer.data, safe=False)
+        return Response(serializer.data)
 
 
 class OrdersList(APIView):

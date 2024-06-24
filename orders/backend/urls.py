@@ -16,7 +16,6 @@ urlpatterns = [
     path('login/', LoginView.as_view(), name='login'),
     path('logout/', LogoutView.as_view(), name='logout'),
     path('shops/', ShopList.as_view(), name='shop_list'),
-    path('shops/<str:name>/', ShopDetails.as_view(), name='shop_details'),
+    path('shops/<int:pk>/', ShopDetails.as_view(), name='shop_details'),
     path('products/', ProductsList.as_view(), name='product_list'),
-    # path('orders/', OrdersList.as_view(), name='order_list'),
 ] + r.urls
