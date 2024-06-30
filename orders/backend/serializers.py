@@ -84,28 +84,30 @@ class CategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 
-class ProductInfoSerializer(serializers.ModelSerializer):
-    """Сериализатор информации о продукте"""
-    shop = serializers.SlugRelatedField(queryset=Shop.objects.all(), slug_field='name', allow_null=True)
-    model = serializers.CharField(max_length=80, allow_blank=True)
-    quantity = serializers.IntegerField()
-    price = serializers.IntegerField()
-    class Meta:
-        model = ProductInfo
-        fields = ['shop', 'model', 'price', 'quantity']
-
-
 class ProductSerializer(serializers.ModelSerializer):
-    """Сериализатор продукта"""
-    id = serializers.IntegerField()
-    name = serializers.CharField(max_length=100)
-    category = serializers.SlugRelatedField(queryset=Category.objects.all(), slug_field='name')
-    product_info = ProductInfoSerializer(many=True)
+    category = serializers.StringRelatedField()
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'category',
-                  'product_info']
+        fields = ('name', 'category',)
+
+
+class ProductParameterSerializer(serializers.ModelSerializer):
+    parameter = serializers.StringRelatedField()
+
+    class Meta:
+        model = ProductParameter
+        fields = ('parameter', 'value',)
+
+
+class ProductInfoSerializer(serializers.ModelSerializer):
+    product = ProductSerializer(read_only=True)
+    product_parameters = ProductParameterSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = ProductInfo
+        fields = ('id', 'model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'product_parameters',)
+        read_only_fields = ('id',)
 
 
 class ContactSerializer(serializers.ModelSerializer):
@@ -167,5 +169,5 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'user', 'created_at', 'state', 'contact']
+        fields = ['id', 'user', 'created_at', 'state', 'contact', 'ordered_items', 'total_sum']
         read_only_fields = ('id','user', 'created_at')
