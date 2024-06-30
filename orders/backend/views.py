@@ -12,7 +12,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_201_CREATED
+from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from ujson import loads as load_json
@@ -25,13 +25,10 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from .permissions import IsOwnerOrReadOnly, IsOwner
 # from rest_framework.permissions import permission_classes
 
-from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrdersSerializer, \
+from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrderSerializer, \
     ContactSerializer, OrderItemSerializer, CategorySerializer
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
-                     Product, Category, Shop, User, Contact)
-
-
-
+                     Product, Category, Shop, User, Contact, ConfirmEmailToken)
 
 
 class SignUpView(generics.GenericAPIView):
@@ -77,6 +74,38 @@ class LoginView(APIView):
             return Response(data={'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
+class ConfirmRegistration(APIView):
+    """
+    Класс для подтверждения почтового адреса
+    """
+
+    # Регистрация методом POST
+    def post(self, request, *args, **kwargs):
+        """
+                Подтверждает почтовый адрес пользователя.
+
+                Args:
+                - request (Request): The Django request object.
+
+                Returns:
+                - JsonResponse: The response indicating the status of the operation and any errors.
+                """
+        # проверяем обязательные аргументы
+        if {'email', 'token'}.issubset(request.data):
+
+            token = ConfirmEmailToken.objects.filter(user__email=request.data['email'],
+                                                     key=request.data['token']).first()
+            if token:
+                token.user.is_active = True
+                token.user.save()
+                token.delete()
+                return JsonResponse({'Status': True})
+            else:
+                return JsonResponse({'Status': False, 'Errors': 'Неправильно указан токен или email'})
+
+        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+
+
 class LogoutView(APIView):
     serializer_class = LoginSerializer
 
@@ -95,7 +124,7 @@ class PartnerUpdate(APIView):
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-        if not request.user.type == 'shop':
+        if not request.user.type != 'shop':
             return JsonResponse({'detail': 'Only for shops'}, status=HTTP_401_UNAUTHORIZED)
 
         url = request.data.get('url')
@@ -110,15 +139,15 @@ class PartnerUpdate(APIView):
                 data = load_yaml(stream, Loader=Loader)
                 shop, _ = Shop.objects.get_or_create(name=data['shop'], user_id=request.user.id)
                 for category in data['categories']:
-                    category_obj, _ = Category.objects.get_or_create(id=category.id, name=category['name'])
+                    category_obj, _ = Category.objects.get_or_create(id=category['id'], name=category['name'])
                     category_obj.shops.add(shop.id)
                     category_obj.save()
 
                 ProductInfo.objects.filter(shop_id=shop.id).delete()
 
                 for product in data['goods']:
-                    product_obj, _ = Product.objects.get_or_create(name=product['name'], category_id=product['category_id'])
-                    product_info_obj, _ = ProductInfo.objects.create(
+                    product_obj, _ = Product.objects.get_or_create(name=product['name'], category_id=product['category'])
+                    product_info_obj = ProductInfo.objects.create(
                             product_id=product_obj.id,
                             shop_id=shop.id,
                             model=product['model'],
@@ -156,8 +185,9 @@ class ShopDetails(APIView):
 
 class CategoryViewSet(ModelViewSet):
     """View for getting list of categories"""
-    queryset = Category.objects.all()
+    queryset = Category.objects.all().order_by('id')
     serializer_class = CategorySerializer
+
 
 
 class ProductsList(APIView):
@@ -166,22 +196,24 @@ class ProductsList(APIView):
     filterset_fields = ['name', 'category', 'model', 'shop', 'price', 'quantity']
 
     def get(self, request):
-        products = Product.objects.all()
+        products = Product.objects.all().order_by('name')
         serializer = ProductSerializer(products, many=True)
         return Response(serializer.data)
 
 
-class OrdersList(APIView):
+class OrderView(APIView):
 
-    def get(self, request):
+    def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
         else:
-            orders = Order.objects.filter(user_id=request.user.id).order_by('-created_at')
-            serializer = OrdersSerializer
-            return JsonResponse(serializer.data, safe=False)
-
+            order = Order.objects.filter(user_id=request.user.id, state='new').prefetch_related(
+                'orderitems__product_info__product__category',
+                'orderitems__product_info__product_parameters__parameter').annotate(
+                ).distinct()
+            serializer = OrderSerializer(order, many=True)
+            return Response(serializer.data, status=HTTP_200_OK)
 
 class ContactViewSet(ModelViewSet):
 
@@ -285,14 +317,14 @@ class ContactViewSet(ModelViewSet):
 
 class NewOrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
-    serializer_class = OrdersSerializer
+    serializer_class = OrderSerializer
 
     def create(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return Response({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
         else:
-            serializer = OrdersSerializer(data=request.data, context={'request': request}, many=True)
+            serializer = OrderSerializer(data=request.data, context={'request': request}, many=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=HTTP_201_CREATED)
@@ -312,33 +344,40 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated, IsOwner]
 
     def create(self, request, *args, **kwargs):
-        items_string = request.data
-        if items_string is None or items_string == '':
-            return ValidationError('No data to process')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=HTTP_201_CREATED, headers=headers)
 
-        try:
-            items_dict = load_json(items_string)
-        except ValueError:
-            return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
-
-        order = Order.objects.get_or_create(user_id=request.user.id, state='basket')
-        objects_created = 0
-        for order_item_data in items_dict:
-            order_item_data['order'] = order.id
-            serializer = OrderItemSerializer(data=order_item_data, many=True)
-            if serializer.is_valid():
-                try:
-                    serializer.save()
-                except IntegrityError as error:
-                    return JsonResponse({'Status': False, 'Errors': str(error)}, status=HTTP_400_BAD_REQUEST)
-                else:
-                    objects_created += 1
-
-        if objects_created > 0:
-            Order.objects.filter(id=order.id).update(state='new')
-            return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
-
-        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
+    # def create(self, request, *args, **kwargs):
+    #     items_string = request.data
+    #     if items_string is None or items_string == '':
+    #         return ValidationError('No data to process')
+    #
+    #     try:
+    #         items_dict = load_json(items_string)
+    #     except ValueError:
+    #         return JsonResponse({'Status': False, 'Errors': 'Неверный формат запроса'})
+    #
+    #     order = Order.objects.get_or_create(user_id=request.user.id, state='basket')
+    #     objects_created = 0
+    #     for order_item_data in items_dict:
+    #         order_item_data['order'] = order.id
+    #         serializer = OrderItemSerializer(data=order_item_data, many=True)
+    #         if serializer.is_valid():
+    #             try:
+    #                 serializer.save()
+    #             except IntegrityError as error:
+    #                 return JsonResponse({'Status': False, 'Errors': str(error)}, status=HTTP_400_BAD_REQUEST)
+    #             else:
+    #                 objects_created += 1
+    #
+    #     if objects_created > 0:
+    #         Order.objects.filter(id=order.id).update(state='new')
+    #         return JsonResponse(serializer.data, status=status.HTTP_201_CREATED)
+    #
+    #     return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'}, status=HTTP_400_BAD_REQUEST)
         # if serializer.is_valid():
         #     user = request.user
         #     basket, _ = Order.objects.get_or_create(user_id=request.user.id,
@@ -382,5 +421,6 @@ class OrderItemViewSet(viewsets.ModelViewSet):
                 instance._prefetched_objects_cache = {}
 
             return Response(serializer.data)
+
 
 
