@@ -132,7 +132,6 @@ class ContactSerializer(serializers.ModelSerializer):
 class OrderItemSerializer(serializers.ModelSerializer):
     """Сериализатор корзины"""
 
-    order = serializers.SlugRelatedField(queryset=Order.objects.all(), slug_field='id')
     product_info = ProductInfoSerializer(read_only=True)
     shop = serializers.SlugRelatedField(queryset=Shop.objects.all(), slug_field='name')
 
@@ -147,6 +146,14 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderItemCreateSerializer(serializers.ModelSerializer):
     product_info = ProductInfoSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = OrderItem
+        fields = ['order', 'product_info', 'quantity']
+        read_only_fields = ('id',)
+        extra_kwargs = {
+            'order': {'write_only': True}
+        }
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -170,4 +177,25 @@ class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
         fields = ['id', 'user', 'created_at', 'state', 'contact', 'ordered_items', 'total_sum']
+        read_only_fields = ('id','user', 'created_at')
+
+
+class OrdersSerializer(serializers.ModelSerializer):
+    """Сериализатор заказа"""
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    def get_contact_for_order(self, obj):
+        if obj.contact:
+            return (f"{obj.contact.city}, {obj.contact.street}, {obj.contact.house}, {obj.contact.structure}, "
+                    f"{obj.contact.building}, {obj.contact.apartment}, {obj.contact.phone}")
+
+    contact = serializers.SerializerMethodField(method_name='get_contact_for_order')
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        validated_data['user'] = user
+        return Order.objects.create(**validated_data)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'user', 'created_at', 'state', 'contact']
         read_only_fields = ('id','user', 'created_at')

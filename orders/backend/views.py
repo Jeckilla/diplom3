@@ -22,11 +22,11 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.renderers import TemplateHTMLRenderer
 
-from .permissions import IsOwnerOrReadOnly, IsOwner
+from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
 # from rest_framework.permissions import permission_classes
 
 from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrderSerializer, \
-    ContactSerializer, OrderItemSerializer, CategorySerializer
+    ContactSerializer, OrderItemSerializer, CategorySerializer, OrdersSerializer
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
                      Product, Category, Shop, User, Contact, ConfirmEmailToken)
 
@@ -121,6 +121,8 @@ class LogoutView(APIView):
 
 
 class PartnerUpdate(APIView):
+
+    permission_classes = [IsAuthenticated and IsShop]
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
@@ -187,7 +189,8 @@ class CategoryViewSet(ModelViewSet):
     """View for getting list of categories"""
     queryset = Category.objects.all().order_by('id')
     serializer_class = CategorySerializer
-
+    filterset_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
+    search_fields = ['name', ]
 
 
 class ProductsList(APIView):
@@ -219,7 +222,16 @@ class ContactViewSet(ModelViewSet):
 
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
-    permission_classes = [IsOwner]
+    permission_classes = [IsAuthenticated, IsOwner]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ContactSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=HTTP_201_CREATED)
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
 # class BascketView(APIView):
@@ -317,14 +329,15 @@ class ContactViewSet(ModelViewSet):
 
 class NewOrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
-    serializer_class = OrderSerializer
+    serializer_class = OrdersSerializer
+    permission_classes = [IsAuthenticated, IsOwner]
 
     def create(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return Response({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
         else:
-            serializer = OrderSerializer(data=request.data, context={'request': request}, many=True)
+            serializer = OrdersSerializer(data=request.data, context={'request': request}, many=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=HTTP_201_CREATED)
