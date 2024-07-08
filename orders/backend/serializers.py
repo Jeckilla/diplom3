@@ -178,24 +178,3 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ['id', 'user', 'created_at', 'state', 'contact', 'ordered_items', 'total_sum']
         read_only_fields = ('id','user', 'created_at')
-
-
-class OrdersSerializer(serializers.ModelSerializer):
-    """Сериализатор заказа"""
-    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    def get_contact_for_order(self, obj):
-        if obj.contact:
-            return (f"{obj.contact.city}, {obj.contact.street}, {obj.contact.house}, {obj.contact.structure}, "
-                    f"{obj.contact.building}, {obj.contact.apartment}, {obj.contact.phone}")
-
-    contact = serializers.SerializerMethodField(method_name='get_contact_for_order')
-
-    def create(self, validated_data):
-        user = self.context['request'].user
-        validated_data['user'] = user
-        return Order.objects.create(**validated_data)
-
-    class Meta:
-        model = Order
-        fields = ['id', 'user', 'created_at', 'state', 'contact']
-        read_only_fields = ('id','user', 'created_at')

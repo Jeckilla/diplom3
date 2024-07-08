@@ -129,9 +129,14 @@ STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'backend.User'
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# EMAIL_USE_TLS = True
+
+EMAIL_HOST = 'smtp.mail.ru'
+
 EMAIL_HOST_USER = 'netology.diplom@mail.ru'
 EMAIL_HOST_PASSWORD = 'CLdm7yW4U9nivz9mbexu'
-EMAIL_PORT = '465'
+EMAIL_PORT = 465
 EMAIL_USE_SSL = True
 SERVER_EMAIL = EMAIL_HOST_USER
 
@@ -150,7 +155,7 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 40,
 
     'DEFAULT_RENDERER_CLASSES': (
-        'rest_frameworsending emailk.renderers.JSONRenderer',
+        'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
 }

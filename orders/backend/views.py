@@ -1,7 +1,7 @@
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.core.validators import URLValidator
-from django.db.models import Q
+from django.db.models import Q, Sum, F
 from django.http import JsonResponse
 from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404
@@ -26,7 +26,7 @@ from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
 # from rest_framework.permissions import permission_classes
 
 from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrderSerializer, \
-    ContactSerializer, OrderItemSerializer, CategorySerializer, OrdersSerializer
+    ContactSerializer, OrderItemSerializer, CategorySerializer
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
                      Product, Category, Shop, User, Contact, ConfirmEmailToken)
 
@@ -169,6 +169,53 @@ class PartnerUpdate(APIView):
         return JsonResponse({'status': False,  'errors': 'Не указаны все необходимые аргументы'})
 
 
+class PartnerState(APIView):
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
+        if not request.user.type != 'shop':
+            return JsonResponse({'detail': 'Only for shops'}, status=HTTP_401_UNAUTHORIZED)
+
+        shop = request.user.shop
+        serializer = ShopSerializer(shop)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
+        if not request.user.type != 'shop':
+            return JsonResponse({'detail': 'Only for shops'}, status=HTTP_401_UNAUTHORIZED)
+
+        state = request.data.get('state')
+        if state:
+            try:
+                Shop.objects.filter(user_id=request.user.id).update(state=state)
+                return JsonResponse({'status': True})
+            except ValueError as e:
+                return JsonResponse({'status': False,  'errors': str(e)})
+
+        return JsonResponse({'status': False,  'errors': 'Не указаны все необходимые аргументы'})
+
+
+class PartnerListOrders(APIView):
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
+        if not request.user.type != 'shop':
+            return JsonResponse({'detail': 'Only for shops'}, status=HTTP_401_UNAUTHORIZED)
+
+        orders = Order.objects.filter(
+            ordered_items__product_info__shop__user_id=request.user.id).exclude(status='basket').prefetch_related(
+            'ordered_items__product_info__product__category',
+            'ordered_items__product_info__product_parameters__parameter').select_related('contact').annotate(
+            total_sum=Sum(F('ordered_items__quantity') * F('ordered_items__product_info__price'))).distinct()
+
+        serializer = OrderSerializer(orders, many=True)
+        return Response(serializer.data)
+
+
 class ShopList(APIView):
     """View for getting list of shops"""
     def get(self, request):
@@ -218,6 +265,7 @@ class OrderView(APIView):
             serializer = OrderSerializer(order, many=True)
             return Response(serializer.data, status=HTTP_200_OK)
 
+
 class ContactViewSet(ModelViewSet):
 
     queryset = Contact.objects.all()
@@ -246,7 +294,7 @@ class ContactViewSet(ModelViewSet):
 #                 'orderitems__product_info__product_parameters__parameter').annotate(
 #
 #                 ).distinct()
-#             serializer = OrdersSerializer(bascket, many=True)
+#             serializer = OrderSerializer(bascket, many=True)
 #             return JsonResponse(serializer.data, safe=False)
 #
 #     def post(self, request, *args, **kwargs):
@@ -329,7 +377,7 @@ class ContactViewSet(ModelViewSet):
 
 class NewOrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
-    serializer_class = OrdersSerializer
+    serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
     def create(self, request, *args, **kwargs):
@@ -337,7 +385,7 @@ class NewOrderViewSet(viewsets.ModelViewSet):
             return Response({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
         else:
-            serializer = OrdersSerializer(data=request.data, context={'request': request}, many=True)
+            serializer = OrderSerializer(data=request.data, context={'request': request}, many=True)
             if serializer.is_valid():
                 serializer.save()
                 return Response(serializer.data, status=HTTP_201_CREATED)
