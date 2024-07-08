@@ -113,7 +113,7 @@ class ProfileView(APIView):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
         serializer = UserSerializer(request.user)
-        return Response(serializer.data)
+        return Response(serializer.data, status=HTTP_200_OK)
 
 
 class LogoutView(APIView):
@@ -269,8 +269,8 @@ class OrderView(APIView):
                                 status=HTTP_401_UNAUTHORIZED)
         else:
             order = Order.objects.filter(user_id=request.user.id, state='new').prefetch_related(
-                'orderitems__product_info__product__category',
-                'orderitems__product_info__product_parameters__parameter').annotate(
+                'ordered_items__product_info__product__category',
+                'ordered_items__product_info__product_parameters__parameter').annotate(
                 ).distinct()
             serializer = OrderSerializer(order, many=True)
             return Response(serializer.data, status=HTTP_200_OK)

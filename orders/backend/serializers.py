@@ -8,10 +8,6 @@ from rest_framework.authtoken.models import Token
 from rest_framework.validators import ValidationError
 
 
-
-
-
-
 class SignUpSerializer(serializers.ModelSerializer):
     """Сериализатор для входа в систему"""
     first_name = serializers.CharField(max_length=100, style={'placeholder': 'Имя'})
@@ -152,13 +148,11 @@ class OrderItemCreateSerializer(serializers.ModelSerializer):
             'order': {'write_only': True}
         }
 
-
 class OrderSerializer(serializers.ModelSerializer):
     """Сериализатор заказа"""
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     contact = serializers.SerializerMethodField(method_name='get_contact_for_order')
-
-    ordered_items = OrderItemCreateSerializer(many=True, read_only=True)
+    ordered_items = serializers.SerializerMethodField(method_name='get_ordered_items_for_order')
 
     def create(self, validated_data):
         user = self.context['request'].user
@@ -169,6 +163,9 @@ class OrderSerializer(serializers.ModelSerializer):
         if obj.contact:
             return (f"{obj.contact.city}, {obj.contact.street}, {obj.contact.house}, {obj.contact.structure}, "
                     f"{obj.contact.building}, {obj.contact.apartment}, {obj.contact.phone}")
+
+    def get_ordered_items_for_order(self, obj):
+        return OrderItemSerializer(obj.ordered_items, many=True).data
 
     class Meta:
         model = Order
@@ -183,7 +180,4 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email', 'first_name', 'last_name', 'username', 'company', 'position', 'type', 'contacts']
-
-
-
 
