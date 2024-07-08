@@ -17,7 +17,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from ujson import loads as load_json
 from yaml import load as load_yaml, Loader
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, status, viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.renderers import TemplateHTMLRenderer
@@ -26,7 +26,7 @@ from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
 # from rest_framework.permissions import permission_classes
 
 from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrderSerializer, \
-    ContactSerializer, OrderItemSerializer, CategorySerializer
+    ContactSerializer, OrderItemSerializer, CategorySerializer, ProductInfoSerializer, UserSerializer
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
                      Product, Category, Shop, User, Contact, ConfirmEmailToken)
 
@@ -99,11 +99,21 @@ class ConfirmRegistration(APIView):
                 token.user.is_active = True
                 token.user.save()
                 token.delete()
-                return JsonResponse({'Status': True})
+                return Response({'Status': True})
             else:
-                return JsonResponse({'Status': False, 'Errors': 'Неправильно указан токен или email'})
+                return Response({'Status': False, 'Errors': 'Неправильно указан токен или email'})
 
-        return JsonResponse({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+        return Response({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
+
+
+class ProfileView(APIView):
+
+    permission_classes = [IsAuthenticated]
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
 
 
 class LogoutView(APIView):
@@ -271,6 +281,7 @@ class ContactViewSet(ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     permission_classes = [IsAuthenticated, IsOwner]
+    ordering = ['id']
 
     def post(self, request, *args, **kwargs):
         serializer = ContactSerializer(data=request.data)
@@ -280,6 +291,30 @@ class ContactViewSet(ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
+
+
+class ProductInfoView(APIView):
+
+    def get(self, request, *args, **kwargs):
+        query = Q(shop__state=True)
+        shop_id = request.query_params.get('shop_id')
+        category_id = request.query_params.get('category_id')
+
+        if shop_id:
+            query = query & Q(shop__id=shop_id)
+
+        if category_id:
+            query = query & Q(product__category__id=category_id)
+
+        queryset = ProductInfo.objects.filter(
+            query).select_related(
+            'shop', 'product__category').prefetch_related(
+            'product_parameters__parameter').distinct()
+
+        serializer = ProductInfoSerializer(queryset, many=True)
+
+        return Response(serializer.data)
+
 
 
 # class BascketView(APIView):
@@ -378,7 +413,7 @@ class ContactViewSet(ModelViewSet):
 class NewOrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [IsAuthenticated, IsOwner]
+    permission_classes = [permissions.IsAuthenticated]
 
     def create(self, request, *args, **kwargs):
         if not request.user.is_authenticated:

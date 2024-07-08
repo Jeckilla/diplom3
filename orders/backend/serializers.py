@@ -8,11 +8,8 @@ from rest_framework.authtoken.models import Token
 from rest_framework.validators import ValidationError
 
 
-class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор пользователя"""
-    class Meta:
-        model = User
-        fields = ['email', 'first_name', 'last_name', 'username', 'company', 'position', 'type']
+
+
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -162,7 +159,6 @@ class OrderSerializer(serializers.ModelSerializer):
     contact = serializers.SerializerMethodField(method_name='get_contact_for_order')
 
     ordered_items = OrderItemCreateSerializer(many=True, read_only=True)
-    total_sum = serializers.IntegerField()
 
     def create(self, validated_data):
         user = self.context['request'].user
@@ -176,5 +172,18 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'user', 'created_at', 'state', 'contact', 'ordered_items', 'total_sum']
+        fields = ['id', 'user', 'created_at', 'state', 'contact', 'ordered_items']
         read_only_fields = ('id','user', 'created_at')
+
+
+class UserSerializer(serializers.ModelSerializer):
+    """Сериализатор пользователя"""
+    contacts = ContactSerializer(read_only=True, many=True)
+
+    class Meta:
+        model = User
+        fields = ['email', 'first_name', 'last_name', 'username', 'company', 'position', 'type', 'contacts']
+
+
+
+

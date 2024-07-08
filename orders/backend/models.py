@@ -163,8 +163,6 @@ class ProductInfo(models.Model):
             models.UniqueConstraint(fields=['product', 'shop', 'external_id'], name='unique_product_info'),
         ]
 
-    def __str__(self):
-        return self.product.name
 
 
 class Parameter(models.Model):
@@ -232,7 +230,7 @@ class Order(models.Model):
                              related_name='orders', blank=True,
                              on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Создан')
-    state = models.CharField(verbose_name="Статус", choices=STATE_CHOICES, max_length=15)
+    state = models.CharField(verbose_name="Статус", choices=STATE_CHOICES, max_length=15, default='new')
     contact = models.ForeignKey(Contact, verbose_name='Контакты', blank=True, null=True, on_delete=models.CASCADE)
 
     class Meta:
