@@ -22,6 +22,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.renderers import TemplateHTMLRenderer
 
+from .utils import send_confirmation_email
 from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
 # from rest_framework.permissions import permission_classes
 
@@ -114,6 +115,18 @@ class ProfileView(APIView):
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
         serializer = UserSerializer(request.user)
         return Response(serializer.data, status=HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
+        try:
+            serializer = UserSerializer(request.user, data=request.data)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save()
+                return Response(serializer.data, status=HTTP_200_OK)
+            return None
+        except (request.user.DoesNotExist, request.user.email.MultipleObjectsReturned) as e:
+            return Response({'detail': str(e)}, status=HTTP_400_BAD_REQUEST)
 
 
 class LogoutView(APIView):
@@ -261,7 +274,7 @@ class ProductsList(APIView):
         return Response(serializer.data)
 
 
-class OrderView(APIView):
+class OrdersView(APIView):
 
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -518,5 +531,54 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 
             return Response(serializer.data)
 
+class UserInfoView(APIView):
+
+    permission_classes = [IsAuthenticated,]
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
+        user = request.user
+        email = user.email
+        email_confirmed = user.email_confirm
+        data = {'email': email, 'email_confirmed': email_confirmed}
+        return Response(data=data, status=HTTP_200_OK)
+
+
+class SendEmailConfirmationToken(APIView):
+
+    permission_classes = [IsAuthenticated,]
+
+    def get(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
+        user = request.user
+        token = user.confirm_email_tokens.filter(user=user)
+        return Response(data=token, status=HTTP_200_OK)
+
+    def post(self, request):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
+        user = request.user
+        token = ConfirmEmailToken.objects.create(user=user)
+        send_confirmation_email(email=user.email, token_id=token.pk, user_id=user.pk)
+        return Response(data=None, status=HTTP_201_CREATED)
+
+
+def confirm_email_view(request):
+    token_id = request.GET.get('token_id', None)
+    user_id = request.GET.get('user_id', None)
+    if token_id is None or user_id is None:
+        return JsonResponse({'Status': False, 'Errors': 'Недостаточно данных для подтверждения email'},
+                            status=HTTP_400_BAD_REQUEST)
+    try:
+        token = ConfirmEmailToken.objects.get(pk=token_id)
+        user = token.user
+        user.email_confirm = True
+        user.save()
+        data = {'email_confirm': False}
+        return JsonResponse(context=data, status=HTTP_200_OK)
+    except ConfirmEmailToken.DoesNotExist:
+        data = {'email_confirm': False}
+        return JsonResponse(context=data, status=HTTP_400_BAD_REQUEST)
 
 
