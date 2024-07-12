@@ -558,7 +558,11 @@ class SendEmailConfirmationToken(APIView):
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
         user = request.user
         token = ConfirmEmailToken.objects.create(user=user)
-        send_confirmation_email(email=user.email, token_id=token.pk, token_key=token.key, user_id=user.pk)
+        send_confirmation_email(email=user.email,
+                                token_id=token.pk,
+                                token_key=token.key,
+                                user_id=user.pk,
+                                auth_token=user.auth_token)
         return Response(data=None, status=HTTP_201_CREATED)
 
 

@@ -4,11 +4,12 @@ from .models import User
 
 
 
-def send_confirmation_email(email, token_id, token_key, user_id):
+def send_confirmation_email(email, token_id, token_key, user_id, auth_token):
     data = {
         'token_id': str(token_id),
         'user_id': str(user_id),
         'token_key': str(token_key),
+        'Token': str(auth_token.key),
     }
     message = get_template('confirmation_email.txt').render(data)
     send_mail(subject='Please confirm email',
