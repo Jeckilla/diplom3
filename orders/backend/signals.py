@@ -31,26 +31,26 @@ def password_reset_token_created(sender, instance, reset_password_token, **kwarg
     msg.send()
 
 
-@receiver(post_save, sender=User)
-def new_user_registered_signal(sender: Type[User], instance: User, created: bool, **kwargs):
-    """
-     отправляем письмо с подтверждением почты
-    """
-    if created and not instance.is_active:
-        # send an e-mail to the user
-        token, _ = ConfirmEmailToken.objects.get_or_create(user_id=instance.pk)
-
-        msg = EmailMultiAlternatives(
-            # title:
-            f"Password Reset Token for {instance.email}",
-            # message:
-            token.key,
-            # from:
-            settings.EMAIL_HOST_USER,
-            # to:
-            [instance.email]
-        )
-        msg.send()
+# @receiver(post_save, sender=User)
+# def new_user_registered_signal(sender: Type[User], instance: User, created: bool, **kwargs):
+#     """
+#      отправляем письмо с подтверждением почты
+#     """
+#     if created and not instance.is_active:
+#         # send an e-mail to the user
+#         token, _ = ConfirmEmailToken.objects.get_or_create(user_id=instance.pk)
+#
+#         msg = EmailMultiAlternatives(
+#             # title:
+#             f"Password Reset Token for {instance.email}",
+#             # message:
+#             token.key,
+#             # from:
+#             settings.EMAIL_HOST_USER,
+#             # to:
+#             [instance.email]
+#         )
+#         msg.send()
 
 
 @receiver(new_order, sender=Order)

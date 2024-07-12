@@ -1,13 +1,14 @@
 from django.core.mail import send_mail
 from django.template.loader import get_template
+from .models import User
 
-from orders import settings
 
 
-def send_confirmation_email(email, token_id, user_id):
+def send_confirmation_email(email, token_id, token_key, user_id):
     data = {
         'token_id': str(token_id),
-        'user_id': str(user_id)
+        'user_id': str(user_id),
+        'token_key': str(token_key),
     }
     message = get_template('confirmation_email.txt').render(data)
     send_mail(subject='Please confirm email',

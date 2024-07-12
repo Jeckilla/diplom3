@@ -12,7 +12,8 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
-from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
+from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK, \
+    HTTP_204_NO_CONTENT
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from ujson import loads as load_json
@@ -531,17 +532,14 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 
             return Response(serializer.data)
 
-class UserInfoView(APIView):
-
-    permission_classes = [IsAuthenticated,]
-    def get(self, request):
+    def destroy(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
-            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-        user = request.user
-        email = user.email
-        email_confirmed = user.email_confirm
-        data = {'email': email, 'email_confirmed': email_confirmed}
-        return Response(data=data, status=HTTP_200_OK)
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+                                status=HTTP_401_UNAUTHORIZED)
+        else:
+            instance = self.get_object()
+            self.perform_destroy(instance)
+            return Response(status=HTTP_204_NO_CONTENT)
 
 
 class SendEmailConfirmationToken(APIView):
@@ -560,13 +558,14 @@ class SendEmailConfirmationToken(APIView):
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
         user = request.user
         token = ConfirmEmailToken.objects.create(user=user)
-        send_confirmation_email(email=user.email, token_id=token.pk, user_id=user.pk)
+        send_confirmation_email(email=user.email, token_id=token.pk, token_key=token.key, user_id=user.pk)
         return Response(data=None, status=HTTP_201_CREATED)
 
 
 def confirm_email_view(request):
     token_id = request.GET.get('token_id', None)
     user_id = request.GET.get('user_id', None)
+    token_key = request.GET.get('token_key', None)
     if token_id is None or user_id is None:
         return JsonResponse({'Status': False, 'Errors': 'Недостаточно данных для подтверждения email'},
                             status=HTTP_400_BAD_REQUEST)
@@ -575,7 +574,7 @@ def confirm_email_view(request):
         user = token.user
         user.email_confirm = True
         user.save()
-        data = {'email_confirm': False}
+        data = {'email_confirm': True}
         return JsonResponse(context=data, status=HTTP_200_OK)
     except ConfirmEmailToken.DoesNotExist:
         data = {'email_confirm': False}

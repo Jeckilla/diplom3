@@ -2,8 +2,8 @@ from django_rest_passwordreset.views import reset_password_request_token, reset_
 from rest_framework.routers import DefaultRouter
 from django.urls import path
 from .views import PartnerUpdate, ShopList, ShopDetails, LoginView, SignUpView, ContactViewSet, ProductsList, \
-    LogoutView, OrderItemViewSet, NewOrderViewSet, CategoryViewSet, ConfirmRegistration, OrdersView, PartnerListOrders, \
-    PartnerState, ProductInfoView, ProfileView, SendEmailConfirmationToken, UserInfoView, confirm_email_view
+    LogoutView, OrderItemViewSet, NewOrderViewSet, CategoryViewSet, OrdersView, PartnerListOrders, \
+    PartnerState, ProductInfoView, ProfileView, SendEmailConfirmationToken, confirm_email_view
 
 r = DefaultRouter()
 r.register('contacts', ContactViewSet, basename='contact')
@@ -21,14 +21,13 @@ urlpatterns = [
     path('reset_password_confirm/', reset_password_confirm, name='reset_password_confirm'),
     path('user/signup/', SignUpView.as_view(), name='signup'),
     path('user/login/', LoginView.as_view(), name='login'),
-    # path('user/confirm_register/', SendEmailConfirmationToken.as_view(), name='confirm_register'),
-    path('user/info/', UserInfoView.as_view(), name='user_info'),
     path('user/email_confirm/', SendEmailConfirmationToken.as_view(), name='email_confirm'),
     path('user/confirmed_email/', confirm_email_view, name='confirmed_email_view'),
     path('user/profile/', ProfileView.as_view(), name='profile'),
     path('user/logout/', LogoutView.as_view(), name='logout'),
     path('shops/', ShopList.as_view(), name='shop_list'),
     path('shops/<int:pk>/', ShopDetails.as_view(), name='shop_details'),
-    path('products/', ProductInfoView.as_view(), name='products'),
+    path('product_info/', ProductInfoView.as_view(), name='product_info'),
+    path('products/', ProductsList.as_view(), name='products'),
     path('orders/', OrdersView.as_view(), name='orders'),
 ] + r.urls
