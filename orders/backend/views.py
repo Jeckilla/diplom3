@@ -2,7 +2,7 @@ from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.core.validators import URLValidator
 from django.db.models import Q, Sum, F
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404
 from django_filters import OrderingFilter
@@ -22,6 +22,7 @@ from rest_framework import generics, status, viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.renderers import TemplateHTMLRenderer
+
 
 from .utils import send_confirmation_email
 from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
@@ -578,10 +579,10 @@ def confirm_email_view(request):
         user = token.user
         user.email_confirm = True
         user.save()
-        data = {'email_confirm': True}
-        return JsonResponse(context=data, status=HTTP_200_OK)
+        if user.email_confirm == True:
+            return HttpResponseRedirect(redirect_to='http://127.0.0.1:8000/user/profile')
     except ConfirmEmailToken.DoesNotExist:
         data = {'email_confirm': False}
-        return JsonResponse(context=data, status=HTTP_400_BAD_REQUEST)
+        return JsonResponse(data=data, status=HTTP_400_BAD_REQUEST)
 
 
