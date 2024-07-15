@@ -28,13 +28,14 @@ def password_reset_token_created(sender, instance, reset_password_token, **kwarg
     )
     msg.send()
 
-@receiver(new_order, sender=Order)
-def new_order_signal(user_id, **kwargs):
+@receiver(post_save, sender=Order)
+def new_order_signal(instance: Type[Order], created: bool, **kwargs):
     """
     отправяем письмо при изменении статуса заказа
     """
+
     # send an e-mail to the user
-    user = User.objects.get(id=user_id)
+    user = User.objects.get(id=instance.user.id)
 
     msg = EmailMultiAlternatives(
         # title:
