@@ -130,7 +130,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = OrderItem
-        fields = ['order', 'shop', 'product_info', 'quantity']
+        fields = ['order', 'product_info', 'shop', 'quantity']
         read_only_fields = ('id',)
         extra_kwargs = {
             'order': {'write_only': True}
@@ -151,13 +151,29 @@ class OrderItemCreateSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     """Сериализатор заказа"""
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    contact = serializers.SerializerMethodField(method_name='get_contact_for_order')
+    contact = ContactSerializer(write_only=True)
+    product_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True)
     ordered_items = serializers.SerializerMethodField(method_name='get_ordered_items_for_order')
+    get_total_cost = serializers.SerializerMethodField()
+
+    def get_total_cost(self, obj):
+        return obj.get_total_cost()
 
     def create(self, validated_data):
-        user = self.context['request'].user
-        validated_data['user'] = user
-        return Order.objects.create(**validated_data)
+        product_ids = validated_data.pop('product_ids')
+        contact = validated_data.pop('contact')
+
+        contact_instance = Contact.objects.create(**contact)
+        order = Order.objects.create(contact=contact_instance, **validated_data)
+
+        for product_id in product_ids:
+            product = ProductInfo.objects.get(id=product_id)  # Access the correct attribute containing product_id
+            ordered_item = OrderItem.objects.create(order=order,
+                                                    shop=product.shop,
+                                                    product_info=product,
+                                                    quantity=1)  # Set quantity as needed
+
+        return order
 
     def get_contact_for_order(self, obj):
         if obj.contact:
@@ -167,10 +183,11 @@ class OrderSerializer(serializers.ModelSerializer):
     def get_ordered_items_for_order(self, obj):
         return OrderItemSerializer(obj.ordered_items, many=True).data
 
+
     class Meta:
         model = Order
-        fields = ['id', 'user', 'created_at', 'state', 'contact', 'ordered_items']
-        read_only_fields = ('id','user', 'created_at')
+        fields = ['id', 'user', 'created_at', 'state', 'contact', 'product_ids', 'get_total_cost', 'ordered_items']
+        read_only_fields = ('id', 'created_at')
 
 
 class UserSerializer(serializers.ModelSerializer):

@@ -165,7 +165,6 @@ class ProductInfo(models.Model):
         ]
 
 
-
 class Parameter(models.Model):
     objects = models.manager.Manager()
     name = models.CharField(max_length=255)
@@ -242,6 +241,9 @@ class Order(models.Model):
     def __str__(self):
         return f'Заказ {self.id} от {self.created_at} статус {self.state}'
 
+    def get_total_cost(self):
+        return sum(item.get_cost() for item in self.ordered_items.all())
+
 
 class OrderItem(models.Model):
     objects = models.manager.Manager()
@@ -271,7 +273,6 @@ class OrderItem(models.Model):
 
     quantity = models.PositiveIntegerField(verbose_name='Количество', default=0)
 
-
     class Meta:
         verbose_name = 'Заказанный продукт'
         verbose_name_plural = "Список заказанных продуктов"
@@ -281,6 +282,9 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f'Заказ {self.order} | Товар {self.product_info} | Количество {self.quantity}'
+
+    def get_cost(self):
+        return int(self.product_info.price) * int(self.quantity)
 
 
 class ConfirmEmailToken(models.Model):
