@@ -1,7 +1,9 @@
 from django.contrib import auth
 from django.contrib.auth import authenticate
+from django.contrib.auth.decorators import login_required
 from django.core.validators import URLValidator
 from django.db.models import Q, Sum, F
+from django.dispatch import receiver
 from django.http import JsonResponse, HttpResponseRedirect
 from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404
@@ -23,8 +25,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.renderers import TemplateHTMLRenderer
 
-
-from .utils import send_confirmation_email
+from .utils import send_confirmation_email, send_confirm_order
 from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
 # from rest_framework.permissions import permission_classes
 
@@ -283,7 +284,7 @@ class OrdersView(APIView):
             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
         else:
-            order = Order.objects.filter(user_id=request.user.id, state='new').prefetch_related(
+            order = Order.objects.filter(user_id=request.user.id).prefetch_related(
                 'ordered_items__product_info__product__category',
                 'ordered_items__product_info__product_parameters__parameter').annotate(
                 ).distinct()
@@ -439,6 +440,33 @@ class SendEmailConfirmationToken(APIView):
         return Response(data=None, status=HTTP_201_CREATED)
 
 
+class SendConfirmationOrder(APIView):
+
+    permission_classes = [IsAuthenticated, IsOwner]
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+                                status=HTTP_401_UNAUTHORIZED)
+
+        if Order.objects.filter(user_id=request.user.id).exists():
+            order = Order.objects.filter(user_id=request.user.id,
+                                         state='new').order_by('-created_at').first()
+
+            self.approve_order(order)
+            return JsonResponse({'Status': 'Your order was confirmed'})
+
+        return JsonResponse({'Status': 'Your order was not confirmed'})
+
+    def approve_order(self, order):
+        order.state = 'confirmed'
+        order.save()
+        send_confirm_order(email=order.user.email,
+                            user_id=order.user.id,
+                            order_id=order.pk,
+                            order_state=order.state,
+                            instance=order)
+
+
 def confirm_email_view(request):
     token_id = request.GET.get('token_id', None)
     user_id = request.GET.get('user_id', None)
@@ -451,7 +479,7 @@ def confirm_email_view(request):
         user = token.user
         user.email_confirm = True
         user.save()
-        if user.email_confirm == True:
+        if user.email_confirm:
             return HttpResponseRedirect(redirect_to='http://127.0.0.1:8000/user/profile')
     except ConfirmEmailToken.DoesNotExist:
         data = {'email_confirm': False}

@@ -8,5 +8,5 @@ class BackendConfig(AppConfig):
     name = 'backend'
 
     def ready(self):
-        from .signals import new_order
+        from .signals import new_order, handle_new_order
 

@@ -1,0 +1,3 @@
+Please confirm your order {{order_id}} by going to the following link:
+
+http://localhost:8000/order/confirm/?user_id={{user_id}}&{{order_id}}&order_state='confirmed'

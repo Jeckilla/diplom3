@@ -82,7 +82,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ('name', 'category',)
+        fields = ('id', 'name', 'category',)
 
 
 class ProductParameterSerializer(serializers.ModelSerializer):
@@ -161,9 +161,15 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         product_ids = validated_data.pop('product_ids')
+
+        self.user = self.context['request'].user
+
         contact = validated_data.pop('contact')
+        if self.user.is_authenticated:
+            contact['user'] = self.user
 
         contact_instance = Contact.objects.create(**contact)
+
         order = Order.objects.create(contact=contact_instance, **validated_data)
 
         for product_id in product_ids:
@@ -172,13 +178,18 @@ class OrderSerializer(serializers.ModelSerializer):
                                                     shop=product.shop,
                                                     product_info=product,
                                                     quantity=1)  # Set quantity as needed
+            product.quantity -= 1
+            product.save()
+            if product.quantity == 0:
+                ordered_item.delete()
 
         return order
 
-    def get_contact_for_order(self, obj):
-        if obj.contact:
-            return (f"{obj.contact.city}, {obj.contact.street}, {obj.contact.house}, {obj.contact.structure}, "
-                    f"{obj.contact.building}, {obj.contact.apartment}, {obj.contact.phone}")
+    def get_contact_for_order(self, instance, *args, **kwargs):
+        if self.user.contact:
+            return (f"{self.user.contact.city}, {self.user.contact.street}, {self.user.contact.house}, "
+                    f"{self.user.contact.structure}, {self.user.contact.building},"
+                    f" {self.user.contact.apartment}, {self.user.contact.phone}")
 
     def get_ordered_items_for_order(self, obj):
         return OrderItemSerializer(obj.ordered_items, many=True).data
