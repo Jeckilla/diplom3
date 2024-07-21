@@ -22,7 +22,7 @@ def send_confirm_order(email, user_id, order_id, order_state, instance):
         'email': str(email),
         'user_id': str(user_id),
         'order_id': str(order_id),
-        'order_status': str(order_state),
+        'order_state': str(order_state),
     }
     message = get_template('confirmation_order.txt').render(data)
     send_mail(subject=f'Please confirm your order {instance.pk}',

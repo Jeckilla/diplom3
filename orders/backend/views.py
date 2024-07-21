@@ -269,7 +269,7 @@ class CategoryViewSet(ModelViewSet):
 class ProductsList(APIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     search_fields = ['model', ]
-    filterset_fields = ['name', 'category', 'model', 'shop', 'price', 'quantity']
+    filterset_fields = ['category', 'model', 'shop', 'price']
 
     def get(self, request):
         products = Product.objects.all().order_by('name')
@@ -289,6 +289,18 @@ class OrdersView(APIView):
                 'ordered_items__product_info__product_parameters__parameter').annotate(
                 ).distinct()
             serializer = OrderSerializer(order, many=True)
+            return Response(serializer.data, status=HTTP_200_OK)
+
+
+class OrderDetailsView(APIView):
+
+    def get(self, request, pk):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+                                status=HTTP_401_UNAUTHORIZED)
+        else:
+            order = Order.objects.get(id=pk)
+            serializer = OrderSerializer(order)
             return Response(serializer.data, status=HTTP_200_OK)
 
 
@@ -453,7 +465,7 @@ class SendConfirmationOrder(APIView):
                                          state='new').order_by('-created_at').first()
 
             self.approve_order(order)
-            return JsonResponse({'Status': 'Your order was confirmed'})
+            return JsonResponse({'Status': 'Your order was confirmed. Thank you for your order!'})
 
         return JsonResponse({'Status': 'Your order was not confirmed'})
 
