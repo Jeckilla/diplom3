@@ -30,7 +30,7 @@ urlpatterns = [
     path('shops/<int:pk>/', ShopDetails.as_view(), name='shop_details'),
     path('product_info/', ProductInfoView.as_view(), name='product_info'),
     path('products/', ProductsList.as_view(), name='products'),
-    path('order/confirm/<int:user_id>/<int:order_id>/', SendConfirmationOrder.as_view(),
+    path('order/confirm/<str:Token>/<int:order_id>/', SendConfirmationOrder.as_view(),
          name='order_confirm'),
     path('orders/', OrdersView.as_view(), name='orders'),
     path('orders/<int:pk>/', OrderDetailsView.as_view(), name='order_detail'),

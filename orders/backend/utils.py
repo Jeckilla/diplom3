@@ -17,16 +17,16 @@ def send_confirmation_email(email, token_id, token_key, user_id, auth_token):
               recipient_list=[email],
               fail_silently=True)
 
-def send_confirm_order(email, user_id, order_id, order_state, instance):
-    data = {
-        'email': str(email),
-        'user_id': str(user_id),
-        'order_id': str(order_id),
-        'order_state': str(order_state),
-    }
-    message = get_template('confirmation_order.txt').render(data)
-    send_mail(subject=f'Please confirm your order {instance.pk}',
-              message=message,
-              from_email='netology.diplom@mail.ru',
-              recipient_list=[email],
-              fail_silently=True)
+# def send_confirm_order(email, user_id, order_id, order_state, instance):
+#     data = {
+#         'email': str(email),
+#         'user_id': str(user_id),
+#         'order_id': str(order_id),
+#         'order_state': str(order_state),
+#     }
+#     message = get_template('confirmation_order.txt').render(data)
+#     send_mail(subject=f'Please confirm your order {instance.pk}',
+#               message=message,
+#               from_email='netology.diplom@mail.ru',
+#               recipient_list=[email],
+#               fail_silently=True)

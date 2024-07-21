@@ -9,7 +9,7 @@ from rest_framework.validators import ValidationError
 
 
 class SignUpSerializer(serializers.ModelSerializer):
-    """Сериализатор для входа в систему"""
+    """Serializer for registration"""
     first_name = serializers.CharField(max_length=100, style={'placeholder': 'Имя'})
     last_name = serializers.CharField(max_length=100, style={'placeholder': 'Фамилия'})
     email = serializers.EmailField(max_length=80, style={'placeholder': 'Email', 'autofocus': True})
@@ -37,6 +37,7 @@ class SignUpSerializer(serializers.ModelSerializer):
 
 
 class LoginSerializer(serializers.Serializer):
+    """Serializer for login"""
     email = serializers.EmailField(
         max_length=100,
         style={'placeholder': 'Email', 'autofocus': True}
@@ -49,7 +50,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class ShopSerializer(serializers.ModelSerializer):
-    """Сериализатор магазина"""
+    """Serializer of shops"""
     url = serializers.URLField(max_length=300,
                                style={'placeholder': 'Email'},
                                allow_blank=True)
@@ -61,7 +62,7 @@ class ShopSerializer(serializers.ModelSerializer):
 
 
 class UpdatePartnerSerializer(serializers.ModelSerializer):
-    """Сериализатор для обновления информации о товарах магазина"""
+    """Serializer for updating info about products of the shop"""
     url = serializers.URLField(max_length=300,
                                style={'placeholder': 'Email'},
                                allow_blank=True)
@@ -71,13 +72,14 @@ class UpdatePartnerSerializer(serializers.ModelSerializer):
 
 
 class CategorySerializer(serializers.ModelSerializer):
-    """Сериализатор категории"""
+    """Serializer of categories"""
     class Meta:
         model = Category
         fields = ['id', 'name']
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    """Serializer of products"""
     category = serializers.StringRelatedField()
 
     class Meta:
@@ -94,6 +96,7 @@ class ProductParameterSerializer(serializers.ModelSerializer):
 
 
 class ProductInfoSerializer(serializers.ModelSerializer):
+    """Serializer of product info"""
     product = ProductSerializer(read_only=True)
     product_parameters = ProductParameterSerializer(read_only=True, many=True)
 
@@ -104,7 +107,7 @@ class ProductInfoSerializer(serializers.ModelSerializer):
 
 
 class ContactSerializer(serializers.ModelSerializer):
-    """Сериализатор контактов пользователя"""
+    """Serializer for contacts of users"""
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     city = serializers.CharField(max_length=50)
     street = serializers.CharField(max_length=100)
@@ -116,14 +119,14 @@ class ContactSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Contact
-        fields = ['user', 'city', 'street', 'house', 'structure', 'building', 'apartment', 'phone']
+        fields = ['id', 'user', 'city', 'street', 'house', 'structure', 'building', 'apartment', 'phone']
 
     def create(self, validated_data):
         return super().create(validated_data)
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
-    """Сериализатор корзины"""
+    """Serializer of basket items"""
 
     product_info = ProductInfoSerializer(read_only=True)
     shop = serializers.SlugRelatedField(queryset=Shop.objects.all(), slug_field='name')
@@ -149,7 +152,7 @@ class OrderItemCreateSerializer(serializers.ModelSerializer):
         }
 
 class OrderSerializer(serializers.ModelSerializer):
-    """Сериализатор заказа"""
+    """Serializer of order"""
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
     contact = ContactSerializer(write_only=True)
     product_ids = serializers.ListField(child=serializers.IntegerField(), write_only=True)
@@ -202,7 +205,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор пользователя"""
+    """Serializer of user"""
     contacts = ContactSerializer(read_only=True, many=True)
 
     class Meta:

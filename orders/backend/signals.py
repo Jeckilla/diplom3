@@ -42,7 +42,7 @@ def new_order_signal(instance: Type[Order], created: bool, **kwargs):
 
     msg = EmailMultiAlternatives(
         # title:
-        f"Обновление статуса заказа",
+        f"Обновление статуса заказа № {instance.pk}",
         # message:
         f'Заказ № {instance.pk} сформирован',
         # from:

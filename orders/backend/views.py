@@ -1,12 +1,15 @@
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ObjectDoesNotExist
+from django.core.mail import send_mail
 from django.core.validators import URLValidator
 from django.db.models import Q, Sum, F
 from django.dispatch import receiver
 from django.http import JsonResponse, HttpResponseRedirect
 from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404
+from django.urls import reverse
 from django_filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from requests import get
@@ -15,7 +18,7 @@ from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK, \
-    HTTP_204_NO_CONTENT
+    HTTP_204_NO_CONTENT, HTTP_404_NOT_FOUND, HTTP_403_FORBIDDEN
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from ujson import loads as load_json
@@ -25,7 +28,7 @@ from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.renderers import TemplateHTMLRenderer
 
-from .utils import send_confirmation_email, send_confirm_order
+from .utils import send_confirmation_email
 from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
 # from rest_framework.permissions import permission_classes
 
@@ -267,6 +270,7 @@ class CategoryViewSet(ModelViewSet):
 
 
 class ProductsList(APIView):
+    """View for getting list of products"""
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     search_fields = ['model', ]
     filterset_fields = ['category', 'model', 'shop', 'price']
@@ -278,6 +282,8 @@ class ProductsList(APIView):
 
 
 class OrdersView(APIView):
+    """View for getting list of orders"""
+    permission_classes = [IsAuthenticated, IsOwner]
 
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -293,18 +299,43 @@ class OrdersView(APIView):
 
 
 class OrderDetailsView(APIView):
+    """View for getting details of order"""
+    permission_classes = [IsAuthenticated, IsOwner]
 
     def get(self, request, pk):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
+
+        try:
+            order = Order.objects.get(user_id=request.user.id, id=pk)
+        except ObjectDoesNotExist:
+            return JsonResponse({'detail': 'No orders for this user'}, status=HTTP_404_NOT_FOUND)
+
+        serializer = OrderSerializer(order)
+        return Response(serializer.data, status=HTTP_200_OK)
+
+    def delete(self, request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({'detail': 'Authentication credentials were not provided.'},
+                                status=HTTP_401_UNAUTHORIZED)
+
+        order_id = kwargs.get('pk')
+        try:
+            order = Order.objects.get(user_id=request.user.id, id=order_id)
+        except ObjectDoesNotExist:
+            return JsonResponse({'detail': 'No orders for this user.'}, status=HTTP_404_NOT_FOUND)
+
+        if request.user == order.user:
+            order.delete()
+            return JsonResponse({'detail': 'Order deleted successfully.'}, status=HTTP_204_NO_CONTENT)
         else:
-            order = Order.objects.get(id=pk)
-            serializer = OrderSerializer(order)
-            return Response(serializer.data, status=HTTP_200_OK)
+            return JsonResponse({'detail': 'You can delete only your orders.'}, status=HTTP_403_FORBIDDEN)
+
 
 
 class ContactViewSet(ModelViewSet):
+    """View for getting list of contacts and filling form"""
 
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
@@ -331,6 +362,7 @@ class ContactViewSet(ModelViewSet):
 
 
 class ProductInfoView(APIView):
+    """View for getting list of product info"""
 
     def get(self, request, *args, **kwargs):
         query = Q(shop__state=True)
@@ -354,6 +386,7 @@ class ProductInfoView(APIView):
 
 
 class NewOrderViewSet(viewsets.ModelViewSet):
+    """View for creating new order"""
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -388,6 +421,7 @@ class NewOrderViewSet(viewsets.ModelViewSet):
 
 
 class OrderItemViewSet(viewsets.ModelViewSet):
+    """View for getting list of order items"""
 
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
@@ -429,6 +463,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 
 
 class SendEmailConfirmationToken(APIView):
+    """View for sending email confirmation token"""
 
     permission_classes = [IsAuthenticated,]
 
@@ -453,6 +488,7 @@ class SendEmailConfirmationToken(APIView):
 
 
 class SendConfirmationOrder(APIView):
+    """View for sending confirmation order"""
 
     permission_classes = [IsAuthenticated, IsOwner]
     def post(self, request, *args, **kwargs):
@@ -460,26 +496,38 @@ class SendConfirmationOrder(APIView):
             return JsonResponse({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
 
-        if Order.objects.filter(user_id=request.user.id).exists():
+        if Order.objects.filter(user_id=request.user.id, state='new').exists():
             order = Order.objects.filter(user_id=request.user.id,
                                          state='new').order_by('-created_at').first()
+            Token = request.user.auth_token.key
 
-            self.approve_order(order)
-            return JsonResponse({'Status': 'Your order was confirmed. Thank you for your order!'})
+            confirmation_link = request.build_absolute_uri(reverse('order_confirm', kwargs={'Token': Token, 'order_id': order.id}))
 
-        return JsonResponse({'Status': 'Your order was not confirmed'})
+            order.confirmation_link = confirmation_link
+            order.state = 'confirmed'
+            order.save()
+            send_mail(f'Confirm Your Order № {order.id}',
+            f'Click the link to confirm your order {order.id}: {order.confirmation_link}',
+            'netology.diplom@mail.ru',
+            [request.user.email],
+                    fail_silently=False)
 
-    def approve_order(self, order):
+            return JsonResponse({'Status': 'An email has been sent to confirm your order'})
+
+        return JsonResponse({'Status': 'Your order is not confirmed'})
+
+    def confirm_order(self, request, order_id, *args, **kwargs):
+        order = Order.objects.get(id=order_id)
         order.state = 'confirmed'
         order.save()
-        send_confirm_order(email=order.user.email,
-                            user_id=order.user.id,
-                            order_id=order.pk,
-                            order_state=order.state,
-                            instance=order)
+
+
+        # Redirect to URL with order details
+        return HttpResponseRedirect(reverse('order_details', kwargs={'order_id': order_id}))
 
 
 def confirm_email_view(request):
+    """Function for confirming email"""
     token_id = request.GET.get('token_id', None)
     user_id = request.GET.get('user_id', None)
     token_key = request.GET.get('token_key', None)
