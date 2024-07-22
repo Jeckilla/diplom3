@@ -80,7 +80,7 @@ class User(AbstractUser):
     )
     is_active = models.BooleanField(
         verbose_name='active',
-        default=True,
+        default=False,
         help_text=(
             'Designates whether this user should be treated as active. '
             'Unselect this instead of deleting accounts.'
@@ -120,7 +120,7 @@ class Shop(models.Model):
 class Category(models.Model):
     objects = models.manager.Manager()
     name = models.CharField(max_length=255)
-    shops = models.ForeignKey(Shop, verbose_name='Магазины', related_name='categories', on_delete=models.CASCADE)
+    shops = models.ManyToManyField(Shop, verbose_name='Магазины', related_name='categories', blank=True)
 
     class Meta:
         verbose_name = 'Категория'
@@ -216,6 +216,9 @@ class Contact(models.Model):
     class Meta:
         verbose_name = 'Контакты пользователя'
         verbose_name_plural = "Список контактов пользователя"
+        constraints = [
+            models.UniqueConstraint(fields=['city', 'street', 'house', 'apartment'], name='unique_contacts'),
+        ]
 
     def __str__(self):
         return f'Заказчик: {self.user}, Адрес: {self.city}, {self.street}, {self.house}, {self.apartment}.'

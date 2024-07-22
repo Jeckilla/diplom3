@@ -1,3 +1,4 @@
+import yaml
 from django.contrib import auth
 from django.contrib.auth import authenticate
 from django.contrib.auth.decorators import login_required
@@ -39,6 +40,8 @@ from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
 
 
 class SignUpView(generics.GenericAPIView):
+    """View for registration"""
+
     serializer_class = SignUpSerializer
 
     def post(self, request, *args, **kwargs):
@@ -56,6 +59,8 @@ class SignUpView(generics.GenericAPIView):
 
 
 class LoginView(APIView):
+    """View for login"""
+
     serializer_class = LoginSerializer
 
     def get(self, request):
@@ -81,39 +86,8 @@ class LoginView(APIView):
             return Response(data={'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-class ConfirmRegistration(APIView):
-    """
-    Класс для подтверждения почтового адреса
-    """
-
-    # Регистрация методом POST
-    def post(self, request, *args, **kwargs):
-        """
-                Подтверждает почтовый адрес пользователя.
-
-                Args:
-                - request (Request): The Django request object.
-
-                Returns:
-                - JsonResponse: The response indicating the status of the operation and any errors.
-                """
-        # проверяем обязательные аргументы
-        if {'email', 'token'}.issubset(request.data):
-
-            token = ConfirmEmailToken.objects.filter(user__email=request.data['email'],
-                                                     key=request.data['token']).first()
-            if token:
-                token.user.is_active = True
-                token.user.save()
-                token.delete()
-                return Response({'Status': True})
-            else:
-                return Response({'Status': False, 'Errors': 'Неправильно указан токен или email'})
-
-        return Response({'Status': False, 'Errors': 'Не указаны все необходимые аргументы'})
-
-
 class ProfileView(APIView):
+    """View for get and update profile"""
 
     permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
@@ -136,6 +110,8 @@ class ProfileView(APIView):
 
 
 class LogoutView(APIView):
+    """View for logout user"""
+
     serializer_class = LoginSerializer
 
     def get(self, request):
@@ -150,25 +126,25 @@ class LogoutView(APIView):
 
 
 class PartnerUpdate(APIView):
+    """A class for updating data of shop`s products from yaml file"""
 
     permission_classes = [IsAuthenticated and IsShop]
     def post(self, request, *args, **kwargs):
+
+        filename = request.data.get('filename')
+
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-        if not request.user.type != 'shop':
+        if request.user.type != 'shop':
             return JsonResponse({'detail': 'Only for shops'}, status=HTTP_401_UNAUTHORIZED)
 
-        url = request.data.get('url')
-        if url:
-            validate_url = URLValidator()
-            try:
-                validate_url(url)
-            except ValidationError as e:
-                return JsonResponse({'status': False, 'errors': str(e)})
-            else:
-                stream = get(url).content
-                data = load_yaml(stream, Loader=Loader)
-                shop, _ = Shop.objects.get_or_create(name=data['shop'], user_id=request.user.id)
+        if not filename:
+            return JsonResponse({'detail': 'Not all necessary arguments are specified'}, status=HTTP_400_BAD_REQUEST)
+
+        with open(f'backend/data/{filename}', 'r', encoding="UTF-8") as stream:
+            data = yaml.safe_load(stream)
+            shop, _ = Shop.objects.update_or_create(name=data['shop']['name'], user_id=request.user.id)
+            if data:
                 for category in data['categories']:
                     category_obj, _ = Category.objects.get_or_create(id=category['id'], name=category['name'])
                     category_obj.shops.add(shop.id)
@@ -195,15 +171,17 @@ class PartnerUpdate(APIView):
                                 value=value
                             )
                 return JsonResponse({'status': True})
-        return JsonResponse({'status': False,  'errors': 'Не указаны все необходимые аргументы'})
+
+        return JsonResponse({'status': False,  'errors': 'Not all necessary arguments are specified'})
 
 
 class PartnerState(APIView):
+    """A class for changing the state of the partner or get it"""
 
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-        if not request.user.type != 'shop':
+        if not request.user.type == 'shop':
             return JsonResponse({'detail': 'Only for shops'}, status=HTTP_401_UNAUTHORIZED)
 
         shop = request.user.shop
@@ -213,7 +191,7 @@ class PartnerState(APIView):
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-        if not request.user.type != 'shop':
+        if not request.user.type == 'shop':
             return JsonResponse({'detail': 'Only for shops'}, status=HTTP_401_UNAUTHORIZED)
 
         state = request.data.get('state')
@@ -224,10 +202,11 @@ class PartnerState(APIView):
             except ValueError as e:
                 return JsonResponse({'status': False,  'errors': str(e)})
 
-        return JsonResponse({'status': False,  'errors': 'Не указаны все необходимые аргументы'})
+        return JsonResponse({'status': False,  'errors': 'Not all necessary arguments are specified'})
 
 
 class PartnerListOrders(APIView):
+    """View for getting list of orders for shop"""
 
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -333,7 +312,6 @@ class OrderDetailsView(APIView):
             return JsonResponse({'detail': 'You can delete only your orders.'}, status=HTTP_403_FORBIDDEN)
 
 
-
 class ContactViewSet(ModelViewSet):
     """View for getting list of contacts and filling form"""
 
@@ -389,14 +367,17 @@ class NewOrderViewSet(viewsets.ModelViewSet):
     """View for creating new order"""
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return Response({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
 
-        serializer = OrderSerializer(data=request.data, context={'request': request}, many=True)
+        serializer = OrderSerializer(data=request.data, context={'request': request})
 
         if serializer.is_valid():
             serializer.save()
@@ -538,6 +519,7 @@ def confirm_email_view(request):
         token = ConfirmEmailToken.objects.get(pk=token_id)
         user = token.user
         user.email_confirm = True
+        user.is_active = True
         user.save()
         if user.email_confirm:
             return HttpResponseRedirect(redirect_to='http://127.0.0.1:8000/user/profile')

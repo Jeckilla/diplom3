@@ -102,6 +102,7 @@ class ContactAdmin(admin.ModelAdmin):
     list_filter = ['city', 'street', 'house', 'structure', 'building']
 
 
+
 @admin.register(ConfirmEmailToken)
 class ConfirmEmailTokenAdmin(admin.ModelAdmin):
     list_display = ['user', 'key', 'created_at',]
