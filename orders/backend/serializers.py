@@ -171,7 +171,14 @@ class OrderSerializer(serializers.ModelSerializer):
         if self.user.is_authenticated:
             contact['user'] = self.user
 
-        contact_instance = Contact.objects.create(**contact)
+        # Check if a Contact with the same unique fields already exists
+        existing_contact = Contact.objects.filter(city=contact['city'], street=contact['street'],
+                                                house=contact['house'], apartment=contact['apartment']).first()
+
+        if existing_contact:
+            contact_instance = existing_contact
+        else:
+            contact_instance = Contact.objects.create(**contact)
 
         order = Order.objects.create(contact=contact_instance, **validated_data)
 
