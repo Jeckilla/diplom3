@@ -20,6 +20,7 @@ from rest_framework.generics import ListAPIView
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK, \
     HTTP_204_NO_CONTENT, HTTP_404_NOT_FOUND, HTTP_403_FORBIDDEN
+from rest_framework.throttling import UserRateThrottle, AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from ujson import loads as load_json
@@ -31,6 +32,7 @@ from rest_framework.renderers import TemplateHTMLRenderer
 
 from .utils import send_confirmation_email
 from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
+from .tasks import send_confirmation_email_task, send_confirmation_order_task
 # from rest_framework.permissions import permission_classes
 
 from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrderSerializer, \
@@ -48,12 +50,13 @@ class SignUpView(generics.GenericAPIView):
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data
-            serializer.save()
-            response = {
-                "message": f"User created successfuly",
-                "data": serializer.data
-            }
-            return Response(data=response, status=status.HTTP_201_CREATED)
+            user_created = serializer.save()
+            user = User.objects.get(email=user_created.email)
+            send_confirmation_email_task.delay(instance=user.id)
+
+            return Response(data={'data': serializer.data,
+                                  'message': 'User created successfuly'},
+                            status=status.HTTP_201_CREATED)
 
         return Response(data=serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -226,6 +229,7 @@ class PartnerListOrders(APIView):
 
 class ShopList(APIView):
     """View for getting list of shops"""
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
     def get(self, request):
         shops = Shop.objects.all()
         serializer = ShopSerializer(shops, many=True)
@@ -234,6 +238,7 @@ class ShopList(APIView):
 
 class ShopDetails(APIView):
     """View for getting details of shop"""
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
     def get(self, request, pk):
         shops = Shop.objects.get(id=pk)
         serializer = ShopSerializer(shops)
@@ -242,6 +247,7 @@ class ShopDetails(APIView):
 
 class CategoryViewSet(ModelViewSet):
     """View for getting list of categories"""
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
     queryset = Category.objects.all().order_by('id')
     serializer_class = CategorySerializer
     filterset_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
@@ -250,6 +256,7 @@ class CategoryViewSet(ModelViewSet):
 
 class ProductsList(APIView):
     """View for getting list of products"""
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     search_fields = ['model', ]
     filterset_fields = ['category', 'model', 'shop', 'price']
@@ -341,6 +348,7 @@ class ContactViewSet(ModelViewSet):
 
 class ProductInfoView(APIView):
     """View for getting list of product info"""
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
     def get(self, request, *args, **kwargs):
         query = Q(shop__state=True)
@@ -443,29 +451,23 @@ class OrderItemViewSet(viewsets.ModelViewSet):
             return Response(status=HTTP_204_NO_CONTENT)
 
 
-class SendEmailConfirmationToken(APIView):
-    """View for sending email confirmation token"""
-
-    permission_classes = [IsAuthenticated,]
-
-    def get(self, request):
-        if not request.user.is_authenticated:
-            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-        user = request.user
-        token = user.confirm_email_tokens.filter(user=user)
-        return Response(data=token, status=HTTP_200_OK)
-
-    def post(self, request):
-        if not request.user.is_authenticated:
-            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-        user = request.user
-        token = ConfirmEmailToken.objects.create(user=user)
-        send_confirmation_email(email=user.email,
-                                token_id=token.pk,
-                                token_key=token.key,
-                                user_id=user.pk,
-                                auth_token=user.auth_token)
-        return Response(data=None, status=HTTP_201_CREATED)
+# class SendEmailConfirmationToken(APIView):
+#     """View for sending email confirmation token"""
+#
+#     permission_classes = [IsAuthenticated,]
+#
+#     def get(self, request):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
+#         user = request.user
+#         token = user.confirm_email_tokens.filter(user=user)
+#         return Response(data=token, status=HTTP_200_OK)
+#
+#     def post(self, request):
+#         if not request.user.is_authenticated:
+#             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
+#         send_confirmation_email_task.delay(instance=request.user)
+#         return Response(data=None, status=HTTP_201_CREATED)
 
 
 class SendConfirmationOrder(APIView):
@@ -485,13 +487,8 @@ class SendConfirmationOrder(APIView):
             confirmation_link = request.build_absolute_uri(reverse('order_confirm', kwargs={'Token': Token, 'order_id': order.id}))
 
             order.confirmation_link = confirmation_link
-            order.state = 'confirmed'
             order.save()
-            send_mail(f'Confirm Your Order № {order.id}',
-            f'Click the link to confirm your order {order.id}: {order.confirmation_link}',
-            'netology.diplom@mail.ru',
-            [request.user.email],
-                    fail_silently=False)
+            send_confirmation_order_task.delay(instance=order.id, confirmation_link=confirmation_link)
 
             return JsonResponse({'Status': 'An email has been sent to confirm your order'})
 
@@ -501,7 +498,6 @@ class SendConfirmationOrder(APIView):
         order = Order.objects.get(id=order_id)
         order.state = 'confirmed'
         order.save()
-
 
         # Redirect to URL with order details
         return HttpResponseRedirect(reverse('order_details', kwargs={'order_id': order_id}))
