@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django_filters',
 
     'drf_standardized_errors',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
@@ -174,9 +175,19 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/day',
         'user': '50/day'
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Diplom API for orders',
+    'DESCRIPTION': 'Project API with DRF for users can ordering products and partners (shops) load products and get orders on his products',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_DIST': 'SIDECAR',  # shorthand to use the sidecar instead
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
+}
 
 # Default primary key field type
 

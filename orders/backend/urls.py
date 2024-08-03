@@ -1,6 +1,7 @@
 from django_rest_passwordreset.views import reset_password_request_token, reset_password_confirm
 from rest_framework.routers import DefaultRouter
 from django.urls import path
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from .views import PartnerUpdate, ShopList, ShopDetails, LoginView, SignUpView, ContactViewSet, ProductsList, \
     LogoutView, OrderItemViewSet, NewOrderViewSet, CategoryViewSet, OrdersView, PartnerListOrders, \
     PartnerState, ProductInfoView, ProfileView, confirm_email_view, OrderDetailsView, confirm_order
@@ -32,4 +33,8 @@ urlpatterns = [
     path('order/confirmed/', confirm_order, name='order_confirmed'),
     path('orders/', OrdersView.as_view(), name='orders'),
     path('order/<int:pk>/', OrderDetailsView.as_view(), name='order_detail'),
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Optional UI:
+    path('schema/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ] + r.urls

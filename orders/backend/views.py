@@ -512,7 +512,7 @@ def confirm_order(request):
     auth_token = request.GET.get('auth_token', None)
     user_id = request.GET.get('user_id', None)
     user = User.objects.get(pk=user_id)
-    user = authenticate(email=user.email, auth_token=auth_token)
+    user = authenticate(request, email=user.email, token=auth_token)
     order = Order.objects.get(pk=order_id)
     if token_id is None or order_id is None:
         return JsonResponse({'Status': False, 'Errors': 'Not all necessary arguments are specified for confirmation'},
