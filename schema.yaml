@@ -1,0 +1,1660 @@
+openapi: 3.0.3
+info:
+  title: Diplom API for orders
+  version: 1.0.0
+  description: Project API with DRF for users can ordering products and partners (shops)
+    load products and get orders on his products
+paths:
+  /basket/:
+    get:
+      operationId: basket_list
+      description: |-
+        View for getting list of order items
+
+        Methods:
+            create(self, request, *args, **kwargs) for create order item
+            update(self, request, *args, **kwargs) for update order item
+            destroy(self, request, *args, **kwargs) for delete order item
+
+        Returns:
+            Response:
+                status=HTTP_201_CREATED for create
+                status=HTTP_200_OK for update
+                status=HTTP_204_NO_CONTENT for delete
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - basket
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderItemList'
+          description: ''
+    post:
+      operationId: basket_create
+      description: |-
+        View for getting list of order items
+
+        Methods:
+            create(self, request, *args, **kwargs) for create order item
+            update(self, request, *args, **kwargs) for update order item
+            destroy(self, request, *args, **kwargs) for delete order item
+
+        Returns:
+            Response:
+                status=HTTP_201_CREATED for create
+                status=HTTP_200_OK for update
+                status=HTTP_204_NO_CONTENT for delete
+      tags:
+      - basket
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderItem'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderItem'
+          description: ''
+  /basket/{id}/:
+    get:
+      operationId: basket_retrieve
+      description: |-
+        View for getting list of order items
+
+        Methods:
+            create(self, request, *args, **kwargs) for create order item
+            update(self, request, *args, **kwargs) for update order item
+            destroy(self, request, *args, **kwargs) for delete order item
+
+        Returns:
+            Response:
+                status=HTTP_201_CREATED for create
+                status=HTTP_200_OK for update
+                status=HTTP_204_NO_CONTENT for delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказанный продукт.
+        required: true
+      tags:
+      - basket
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderItem'
+          description: ''
+    put:
+      operationId: basket_update
+      description: |-
+        View for getting list of order items
+
+        Methods:
+            create(self, request, *args, **kwargs) for create order item
+            update(self, request, *args, **kwargs) for update order item
+            destroy(self, request, *args, **kwargs) for delete order item
+
+        Returns:
+            Response:
+                status=HTTP_201_CREATED for create
+                status=HTTP_200_OK for update
+                status=HTTP_204_NO_CONTENT for delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказанный продукт.
+        required: true
+      tags:
+      - basket
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderItem'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderItem'
+          description: ''
+    patch:
+      operationId: basket_partial_update
+      description: |-
+        View for getting list of order items
+
+        Methods:
+            create(self, request, *args, **kwargs) for create order item
+            update(self, request, *args, **kwargs) for update order item
+            destroy(self, request, *args, **kwargs) for delete order item
+
+        Returns:
+            Response:
+                status=HTTP_201_CREATED for create
+                status=HTTP_200_OK for update
+                status=HTTP_204_NO_CONTENT for delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказанный продукт.
+        required: true
+      tags:
+      - basket
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderItem'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderItem'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderItem'
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderItem'
+          description: ''
+    delete:
+      operationId: basket_destroy
+      description: |-
+        View for getting list of order items
+
+        Methods:
+            create(self, request, *args, **kwargs) for create order item
+            update(self, request, *args, **kwargs) for update order item
+            destroy(self, request, *args, **kwargs) for delete order item
+
+        Returns:
+            Response:
+                status=HTTP_201_CREATED for create
+                status=HTTP_200_OK for update
+                status=HTTP_204_NO_CONTENT for delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказанный продукт.
+        required: true
+      tags:
+      - basket
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /categories/:
+    get:
+      operationId: categories_list
+      description: View for getting list of categories
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCategoryList'
+          description: ''
+    post:
+      operationId: categories_create
+      description: View for getting list of categories
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /categories/{id}/:
+    get:
+      operationId: categories_retrieve
+      description: View for getting list of categories
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Категория.
+        required: true
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    put:
+      operationId: categories_update
+      description: View for getting list of categories
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Категория.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Category'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Category'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Category'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: categories_partial_update
+      description: View for getting list of categories
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Категория.
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategory'
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: categories_destroy
+      description: View for getting list of categories
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Категория.
+        required: true
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /contacts/:
+    get:
+      operationId: contacts_list
+      description: |-
+        View for getting list of contacts and filling form
+
+        Methods:
+            get(self, request) for get contacts
+            post(self, request) for create contact
+            destroy(self, request, *args, **kwargs) for delete contact
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - contacts
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedContactList'
+          description: ''
+    post:
+      operationId: contacts_create
+      description: |-
+        View for getting list of contacts and filling form
+
+        Methods:
+            get(self, request) for get contacts
+            post(self, request) for create contact
+            destroy(self, request, *args, **kwargs) for delete contact
+      tags:
+      - contacts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contact'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Contact'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Contact'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+          description: ''
+  /contacts/{id}/:
+    get:
+      operationId: contacts_retrieve
+      description: |-
+        View for getting list of contacts and filling form
+
+        Methods:
+            get(self, request) for get contacts
+            post(self, request) for create contact
+            destroy(self, request, *args, **kwargs) for delete contact
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Контакты пользователя.
+        required: true
+      tags:
+      - contacts
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+          description: ''
+    put:
+      operationId: contacts_update
+      description: |-
+        View for getting list of contacts and filling form
+
+        Methods:
+            get(self, request) for get contacts
+            post(self, request) for create contact
+            destroy(self, request, *args, **kwargs) for delete contact
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Контакты пользователя.
+        required: true
+      tags:
+      - contacts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Contact'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Contact'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Contact'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+          description: ''
+    patch:
+      operationId: contacts_partial_update
+      description: |-
+        View for getting list of contacts and filling form
+
+        Methods:
+            get(self, request) for get contacts
+            post(self, request) for create contact
+            destroy(self, request, *args, **kwargs) for delete contact
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Контакты пользователя.
+        required: true
+      tags:
+      - contacts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedContact'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedContact'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedContact'
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+          description: ''
+    delete:
+      operationId: contacts_destroy
+      description: |-
+        View for getting list of contacts and filling form
+
+        Methods:
+            get(self, request) for get contacts
+            post(self, request) for create contact
+            destroy(self, request, *args, **kwargs) for delete contact
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Контакты пользователя.
+        required: true
+      tags:
+      - contacts
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /new_order/:
+    get:
+      operationId: new_order_list
+      description: View for creating new order
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - new_order
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderList'
+          description: ''
+    post:
+      operationId: new_order_create
+      description: Method for creating new order
+      tags:
+      - new_order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /new_order/{id}/:
+    get:
+      operationId: new_order_retrieve
+      description: View for creating new order
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказ.
+        required: true
+      tags:
+      - new_order
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    put:
+      operationId: new_order_update
+      description: View for creating new order
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказ.
+        required: true
+      tags:
+      - new_order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    patch:
+      operationId: new_order_partial_update
+      description: View for creating new order
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказ.
+        required: true
+      tags:
+      - new_order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrder'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrder'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrder'
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+    delete:
+      operationId: new_order_destroy
+      description: Method for deleting order
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this Заказ.
+        required: true
+      tags:
+      - new_order
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /order/{id}/:
+    get:
+      operationId: order_retrieve
+      description: |-
+        View for getting details of order
+
+        Methods:
+            get(self, request, pk) for get order
+            delete(self, request, *args, **kwargs) for delete order
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - order
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: order_destroy
+      description: |-
+        View for getting details of order
+
+        Methods:
+            get(self, request, pk) for get order
+            delete(self, request, *args, **kwargs) for delete order
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - order
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '204':
+          description: No response body
+  /order/confirm/:
+    post:
+      operationId: order_confirm_create
+      description: Method for creating new order
+      tags:
+      - order
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Order'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Order'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Order'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
+  /orders/:
+    get:
+      operationId: orders_retrieve
+      description: View for getting list of orders
+      tags:
+      - orders
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /partner/orders/:
+    get:
+      operationId: partner_orders_retrieve
+      description: |-
+        View for getting list of orders for shop
+
+        Methods:
+            get(self, request) for get orders
+      tags:
+      - partner
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /partner/state/:
+    get:
+      operationId: partner_state_retrieve
+      description: A class for changing the state of the partner or get it
+      tags:
+      - partner
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: partner_state_create
+      description: A class for changing the state of the partner or get it
+      tags:
+      - partner
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /partner/update/:
+    post:
+      operationId: partner_update_create
+      description: |-
+        A class for updating data of shop`s products from yaml file
+
+        Methods:
+            post(self, request) for update products
+      tags:
+      - partner
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /product_info/:
+    get:
+      operationId: product_info_retrieve
+      description: View for getting list of product info
+      tags:
+      - product_info
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /products/:
+    get:
+      operationId: products_retrieve
+      description: View for getting list of products
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /reset_password/:
+    post:
+      operationId: reset_password_create
+      description: |-
+        An Api View which provides a method to request a password reset token based on an e-mail address
+
+        Sends a signal reset_password_token_created when a reset token was created
+      tags:
+      - reset_password
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Email'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Email'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Email'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Email'
+          description: ''
+  /reset_password_confirm/:
+    post:
+      operationId: reset_password_confirm_create
+      description: An Api View which provides a method to reset a password based on
+        a unique token
+      tags:
+      - reset_password_confirm
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PasswordToken'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PasswordToken'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PasswordToken'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PasswordToken'
+          description: ''
+  /shops/:
+    get:
+      operationId: shops_retrieve
+      description: View for getting list of shops
+      tags:
+      - shops
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /shops/{id}/:
+    get:
+      operationId: shops_retrieve_2
+      description: View for getting details of shop
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - shops
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /user/login/:
+    get:
+      operationId: user_login_retrieve
+      description: |-
+        View for login
+
+        Methods:
+            get(self, request) for get current user
+            post(self, request) for login
+
+        Returns:
+            Response:
+                data:
+                    "message": str,
+                    "email": str,
+                    "Token": str
+      tags:
+      - user
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+          description: ''
+    post:
+      operationId: user_login_create
+      description: |-
+        View for login
+
+        Methods:
+            get(self, request) for get current user
+            post(self, request) for login
+
+        Returns:
+            Response:
+                data:
+                    "message": str,
+                    "email": str,
+                    "Token": str
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+          description: ''
+  /user/logout/:
+    get:
+      operationId: user_logout_retrieve
+      description: View for logout user
+      tags:
+      - user
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+          description: ''
+    post:
+      operationId: user_logout_create
+      description: View for logout user
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Login'
+          description: ''
+  /user/profile/:
+    get:
+      operationId: user_profile_retrieve
+      description: |-
+        View for get and update profile
+
+
+        Methods:
+            get(self, request) for get current user
+            post(self, request) for update user
+
+        Returns:
+            Response:
+                data:
+                "email": str,
+                "first_name": str,
+                "last_name": str,
+                "username": str,
+                "company": str,
+                "position": str,
+                "type": str,
+                "contacts": list,
+                "email_confirm": bool,
+                "is_active": bool
+      tags:
+      - user
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: user_profile_create
+      description: |-
+        View for get and update profile
+
+
+        Methods:
+            get(self, request) for get current user
+            post(self, request) for update user
+
+        Returns:
+            Response:
+                data:
+                "email": str,
+                "first_name": str,
+                "last_name": str,
+                "username": str,
+                "company": str,
+                "position": str,
+                "type": str,
+                "contacts": list,
+                "email_confirm": bool,
+                "is_active": bool
+      tags:
+      - user
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      responses:
+        '200':
+          description: No response body
+  /user/signup/:
+    post:
+      operationId: user_signup_create
+      description: Method for registration
+      tags:
+      - user
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignUp'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SignUp'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SignUp'
+        required: true
+      security:
+      - cookieAuth: []
+      - tokenAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignUp'
+          description: ''
+components:
+  schemas:
+    Category:
+      type: object
+      description: Serializer of categories
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+      required:
+      - id
+      - name
+    Contact:
+      type: object
+      description: Serializer for contacts of users
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        city:
+          type: string
+          maxLength: 50
+        street:
+          type: string
+          maxLength: 100
+        house:
+          type: string
+          maxLength: 15
+        structure:
+          type: string
+          maxLength: 15
+        building:
+          type: string
+          maxLength: 15
+        apartment:
+          type: string
+          maxLength: 15
+        phone:
+          type: string
+          maxLength: 11
+      required:
+      - apartment
+      - building
+      - city
+      - house
+      - id
+      - phone
+      - street
+      - structure
+    Email:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+      - email
+    Login:
+      type: object
+      description: Serializer for login
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 100
+        password:
+          type: string
+          maxLength: 100
+      required:
+      - email
+      - password
+    Order:
+      type: object
+      description: Serializer of order
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создан
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          title: Статус
+        contact:
+          allOf:
+          - $ref: '#/components/schemas/Contact'
+          writeOnly: true
+        product_ids:
+          type: array
+          items:
+            type: integer
+          writeOnly: true
+        get_total_cost:
+          type: string
+          readOnly: true
+        ordered_items:
+          type: string
+          readOnly: true
+      required:
+      - contact
+      - created_at
+      - get_total_cost
+      - id
+      - ordered_items
+      - product_ids
+    OrderItem:
+      type: object
+      description: Serializer of basket items
+      properties:
+        order:
+          type: integer
+          writeOnly: true
+          title: Заказ
+        product_info:
+          allOf:
+          - $ref: '#/components/schemas/ProductInfo'
+          readOnly: true
+        shop:
+          type: string
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Количество
+      required:
+      - product_info
+      - shop
+    PaginatedCategoryList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    PaginatedContactList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Contact'
+    PaginatedOrderItemList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+    PaginatedOrderList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+    PasswordToken:
+      type: object
+      properties:
+        password:
+          type: string
+        token:
+          type: string
+      required:
+      - password
+      - token
+    PatchedCategory:
+      type: object
+      description: Serializer of categories
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+    PatchedContact:
+      type: object
+      description: Serializer for contacts of users
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        city:
+          type: string
+          maxLength: 50
+        street:
+          type: string
+          maxLength: 100
+        house:
+          type: string
+          maxLength: 15
+        structure:
+          type: string
+          maxLength: 15
+        building:
+          type: string
+          maxLength: 15
+        apartment:
+          type: string
+          maxLength: 15
+        phone:
+          type: string
+          maxLength: 11
+    PatchedOrder:
+      type: object
+      description: Serializer of order
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Создан
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          title: Статус
+        contact:
+          allOf:
+          - $ref: '#/components/schemas/Contact'
+          writeOnly: true
+        product_ids:
+          type: array
+          items:
+            type: integer
+          writeOnly: true
+        get_total_cost:
+          type: string
+          readOnly: true
+        ordered_items:
+          type: string
+          readOnly: true
+    PatchedOrderItem:
+      type: object
+      description: Serializer of basket items
+      properties:
+        order:
+          type: integer
+          writeOnly: true
+          title: Заказ
+        product_info:
+          allOf:
+          - $ref: '#/components/schemas/ProductInfo'
+          readOnly: true
+        shop:
+          type: string
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Количество
+    Product:
+      type: object
+      description: Serializer of products
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          title: Название
+          maxLength: 255
+        category:
+          type: string
+          readOnly: true
+      required:
+      - category
+      - id
+      - name
+    ProductInfo:
+      type: object
+      description: Serializer of product info
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        model:
+          type: string
+          title: Модель
+          maxLength: 80
+        product:
+          allOf:
+          - $ref: '#/components/schemas/Product'
+          readOnly: true
+        shop:
+          type: integer
+          title: Магазин
+        quantity:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Количество
+        price:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Цена
+        price_rrc:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          title: Цена_ррц
+        product_parameters:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductParameter'
+          readOnly: true
+      required:
+      - id
+      - price
+      - price_rrc
+      - product
+      - product_parameters
+      - quantity
+      - shop
+    ProductParameter:
+      type: object
+      description: Serializer of product parameters
+      properties:
+        parameter:
+          type: string
+          readOnly: true
+        value:
+          type: string
+          title: Значение
+          maxLength: 255
+      required:
+      - parameter
+      - value
+    SignUp:
+      type: object
+      description: Serializer for registration
+      properties:
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 80
+        username:
+          type: string
+          maxLength: 80
+        password:
+          type: string
+          writeOnly: true
+          maxLength: 20
+          minLength: 6
+      required:
+      - email
+      - first_name
+      - last_name
+      - password
+      - username
+    StateEnum:
+      enum:
+      - basket
+      - new
+      - confirmed
+      - assembled
+      - sent
+      - delivered
+      - canceled
+      type: string
+      description: |-
+        * `basket` - Статус корзины
+        * `new` - Новый
+        * `confirmed` - Подтвержден
+        * `assembled` - Собран
+        * `sent` - Отправлен
+        * `delivered` - Доставлен
+        * `canceled` - Отменен
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: Token-based authentication with required prefix "Token"
