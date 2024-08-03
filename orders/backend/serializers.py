@@ -21,6 +21,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         fields = ['first_name', 'last_name', 'email', 'username', 'password']
 
     def validate(self, attrs):
+        """Method for checking if email is already been used"""
         email_exists = User.objects.filter(email=attrs['email']).exists()
 
         if email_exists:
@@ -28,6 +29,7 @@ class SignUpSerializer(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create(self, validated_data):
+        """Method for creating user"""
         password = validated_data.pop('password')
         user = super().create(validated_data)
         user.set_password(password)
@@ -88,6 +90,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
 
 class ProductParameterSerializer(serializers.ModelSerializer):
+    """Serializer of product parameters"""
     parameter = serializers.StringRelatedField()
 
     class Meta:
@@ -122,6 +125,7 @@ class ContactSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'city', 'street', 'house', 'structure', 'building', 'apartment', 'phone']
 
     def create(self, validated_data):
+        """Method for creating contact"""
         return super().create(validated_data)
 
 
@@ -160,9 +164,11 @@ class OrderSerializer(serializers.ModelSerializer):
     get_total_cost = serializers.SerializerMethodField()
 
     def get_total_cost(self, obj):
+        """Method for getting total cost of order"""
         return obj.get_total_cost()
 
     def create(self, validated_data):
+        """Method for creating order"""
         product_ids = validated_data.pop('product_ids')
 
         self.user = self.context['request'].user
@@ -196,12 +202,14 @@ class OrderSerializer(serializers.ModelSerializer):
         return order
 
     def get_contact_for_order(self, instance, *args, **kwargs):
+        """Method for getting contact of order in the form of string"""
         if self.user.contact:
             return (f"{self.user.contact.city}, {self.user.contact.street}, {self.user.contact.house}, "
                     f"{self.user.contact.structure}, {self.user.contact.building},"
                     f" {self.user.contact.apartment}, {self.user.contact.phone}")
 
     def get_ordered_items_for_order(self, obj):
+        """Method for getting ordered items of order"""
         return OrderItemSerializer(obj.ordered_items, many=True).data
 
 

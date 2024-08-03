@@ -45,11 +45,13 @@ from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
 
 
 class SignUpView(generics.GenericAPIView):
+
     """View for registration"""
 
     serializer_class = SignUpSerializer
 
     def post(self, request, *args, **kwargs):
+        """Method for registration"""
         serializer = self.serializer_class(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data
@@ -65,7 +67,21 @@ class SignUpView(generics.GenericAPIView):
 
 
 class LoginView(APIView):
-    """View for login"""
+
+    """View for login
+
+    Methods:
+        get(self, request) for get current user
+        post(self, request) for login
+
+    Returns:
+        Response:
+            data:
+                "message": str,
+                "email": str,
+                "Token": str
+
+    """
 
     serializer_class = LoginSerializer
 
@@ -93,7 +109,29 @@ class LoginView(APIView):
 
 
 class ProfileView(APIView):
-    """View for get and update profile"""
+
+    """View for get and update profile
+
+
+    Methods:
+        get(self, request) for get current user
+        post(self, request) for update user
+
+    Returns:
+        Response:
+            data:
+            "email": str,
+            "first_name": str,
+            "last_name": str,
+            "username": str,
+            "company": str,
+            "position": str,
+            "type": str,
+            "contacts": list,
+            "email_confirm": bool,
+            "is_active": bool
+
+    """
 
     permission_classes = [IsAuthenticated]
     def get(self, request, *args, **kwargs):
@@ -116,6 +154,7 @@ class ProfileView(APIView):
 
 
 class LogoutView(APIView):
+
     """View for logout user"""
 
     serializer_class = LoginSerializer
@@ -132,7 +171,13 @@ class LogoutView(APIView):
 
 
 class PartnerUpdate(APIView):
-    """A class for updating data of shop`s products from yaml file"""
+
+    """A class for updating data of shop`s products from yaml file
+
+    Methods:
+        post(self, request) for update products
+
+    """
 
     permission_classes = [IsAuthenticated and IsShop]
     def post(self, request, *args, **kwargs):
@@ -148,10 +193,11 @@ class PartnerUpdate(APIView):
             return JsonResponse({'detail': 'Not all necessary arguments are specified'}, status=HTTP_400_BAD_REQUEST)
 
         with open(f'backend/data/{filename}', 'r', encoding="UTF-8") as stream:
-            data = yaml.safe_load(stream)
+            data = yaml.safe_load(stream)  # load data from yaml file
             shop, _ = Shop.objects.update_or_create(name=data['shop']['name'], user_id=request.user.id)
             if data:
                 for category in data['categories']:
+                    # get or create category
                     category_obj, _ = Category.objects.get_or_create(id=category['id'], name=category['name'])
                     category_obj.shops.add(shop.id)
                     category_obj.save()
@@ -159,6 +205,7 @@ class PartnerUpdate(APIView):
                 ProductInfo.objects.filter(shop_id=shop.id).delete()
 
                 for product in data['goods']:
+                    # get or create product
                     product_obj, _ = Product.objects.get_or_create(name=product['name'], category_id=product['category'])
                     product_info_obj = ProductInfo.objects.create(
                             product_id=product_obj.id,
@@ -170,6 +217,7 @@ class PartnerUpdate(APIView):
                             price_rrc=product['price_rrc'],
                         )
                     for name, value in product['parameters'].items():
+                        # get or create parameter
                         parameter_obj, _ = Parameter.objects.get_or_create(name=name)
                         ProductParameter.objects.create(
                                 product_info_id=product_info_obj.id,
@@ -182,6 +230,7 @@ class PartnerUpdate(APIView):
 
 
 class PartnerState(APIView):
+
     """A class for changing the state of the partner or get it"""
 
     def get(self, request, *args, **kwargs):
@@ -212,7 +261,12 @@ class PartnerState(APIView):
 
 
 class PartnerListOrders(APIView):
-    """View for getting list of orders for shop"""
+
+    """View for getting list of orders for shop
+
+    Methods:
+        get(self, request) for get orders
+    """
 
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -231,7 +285,9 @@ class PartnerListOrders(APIView):
 
 
 class ShopList(APIView):
+
     """View for getting list of shops"""
+
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
     def get(self, request):
         shops = Shop.objects.all()
@@ -240,7 +296,9 @@ class ShopList(APIView):
 
 
 class ShopDetails(APIView):
+
     """View for getting details of shop"""
+
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
     def get(self, request, pk):
         shops = Shop.objects.get(id=pk)
@@ -249,7 +307,9 @@ class ShopDetails(APIView):
 
 
 class CategoryViewSet(ModelViewSet):
+
     """View for getting list of categories"""
+
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
     queryset = Category.objects.all().order_by('id')
     serializer_class = CategorySerializer
@@ -258,7 +318,9 @@ class CategoryViewSet(ModelViewSet):
 
 
 class ProductsList(APIView):
+
     """View for getting list of products"""
+
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     search_fields = ['model', ]
@@ -271,7 +333,9 @@ class ProductsList(APIView):
 
 
 class OrdersView(APIView):
+
     """View for getting list of orders"""
+
     permission_classes = [IsAuthenticated, IsOwner]
 
     def get(self, request, *args, **kwargs):
@@ -282,13 +346,21 @@ class OrdersView(APIView):
             order = Order.objects.filter(user_id=request.user.id).prefetch_related(
                 'ordered_items__product_info__product__category',
                 'ordered_items__product_info__product_parameters__parameter').annotate(
-                ).distinct()
+                ).distinct()  # filter order by user_id
             serializer = OrderSerializer(order, many=True)
             return Response(serializer.data, status=HTTP_200_OK)
 
 
 class OrderDetailsView(APIView):
-    """View for getting details of order"""
+
+    """View for getting details of order
+
+    Methods:
+        get(self, request, pk) for get order
+        delete(self, request, *args, **kwargs) for delete order
+
+    """
+
     permission_classes = [IsAuthenticated, IsOwner]
 
     def get(self, request, pk):
@@ -323,7 +395,14 @@ class OrderDetailsView(APIView):
 
 
 class ContactViewSet(ModelViewSet):
-    """View for getting list of contacts and filling form"""
+
+    """View for getting list of contacts and filling form
+
+    Methods:
+        get(self, request) for get contacts
+        post(self, request) for create contact
+        destroy(self, request, *args, **kwargs) for delete contact
+    """
 
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
@@ -350,7 +429,9 @@ class ContactViewSet(ModelViewSet):
 
 
 class ProductInfoView(APIView):
+
     """View for getting list of product info"""
+
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
 
     def get(self, request, *args, **kwargs):
@@ -375,7 +456,9 @@ class ProductInfoView(APIView):
 
 
 class NewOrderViewSet(viewsets.ModelViewSet):
+
     """View for creating new order"""
+
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
@@ -384,6 +467,7 @@ class NewOrderViewSet(viewsets.ModelViewSet):
         serializer.save(user=self.request.user)
 
     def create(self, request, *args, **kwargs):
+        """Method for creating new order"""
         if not request.user.is_authenticated:
             return Response({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
@@ -395,7 +479,7 @@ class NewOrderViewSet(viewsets.ModelViewSet):
             order = Order.objects.filter(user_id=request.user.id,
                                          state='new').order_by('-created_at').first()
             order.save()
-            send_confirmation_order_task.delay(instance=order.id)
+            send_confirmation_order_task.delay(instance=order.id) #  Send email to confirm order
 
             return JsonResponse(data={'data': serializer.data, 'message': 'An email has been sent to confirm your order'},
                                 status=HTTP_201_CREATED)
@@ -409,6 +493,7 @@ class NewOrderViewSet(viewsets.ModelViewSet):
         # Process the items_list further as needed
 
     def destroy(self, request, *args, **kwargs):
+        """Method for deleting order"""
         if not request.user.is_authenticated:
             return Response({'detail': 'Authentication credentials were not provided.'},
                                 status=HTTP_401_UNAUTHORIZED)
@@ -419,31 +504,46 @@ class NewOrderViewSet(viewsets.ModelViewSet):
 
 
 def confirm_order(request):
+
     """Function for confirming order"""
+
     token_id = request.GET.get('token_id', None)
     order_id = request.GET.get('order_id', None)
-    token_key = request.GET.get('token_key', None)
     auth_token = request.GET.get('auth_token', None)
     user_id = request.GET.get('user_id', None)
     user = User.objects.get(pk=user_id)
-    user = authenticate(request, auth_token=auth_token)
+    user = authenticate(email=user.email, auth_token=auth_token)
+    order = Order.objects.get(pk=order_id)
     if token_id is None or order_id is None:
-        return JsonResponse({'Status': False, 'Errors': 'Недостаточно данных для подтверждения заказа'},
+        return JsonResponse({'Status': False, 'Errors': 'Not all necessary arguments are specified for confirmation'},
                             status=HTTP_400_BAD_REQUEST)
     try:
-        login(request, user)
         token = ConfirmEmailToken.objects.get(pk=token_id)
-        order = Order.objects.get(pk=order_id)
+        if token.user != user:
+            return JsonResponse({'Status': False, 'Errors': 'You are not the owner of this order'},
+                                status=HTTP_400_BAD_REQUEST)
         order.state = "confirmed"
         order.save()
-        if order.state == "confirmed":
-            return HttpResponseRedirect(redirect_to=f'http://127.0.0.1:8000/order/{order.id}')
+        return JsonResponse({'Status': True, 'order_id': order_id, 'order_state': order.state})
     except ConfirmEmailToken.DoesNotExist:
-        return JsonResponse({'Status': False, 'Errors': 'Неправильные данные для подтверждения заказа'})
+        return JsonResponse({'Status': False, 'Errors': 'Token does not exist'}, status=HTTP_400_BAD_REQUEST)
 
 
 class OrderItemViewSet(viewsets.ModelViewSet):
-    """View for getting list of order items"""
+    """View for getting list of order items
+
+    Methods:
+        create(self, request, *args, **kwargs) for create order item
+        update(self, request, *args, **kwargs) for update order item
+        destroy(self, request, *args, **kwargs) for delete order item
+
+    Returns:
+        Response:
+            status=HTTP_201_CREATED for create
+            status=HTTP_200_OK for update
+            status=HTTP_204_NO_CONTENT for delete
+
+    """
 
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
@@ -487,7 +587,9 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 
 
 def confirm_email_view(request):
+
     """Function for confirming email"""
+
     token_id = request.GET.get('token_id', None)
     user_id = request.GET.get('user_id', None)
     token_key = request.GET.get('token_key', None)

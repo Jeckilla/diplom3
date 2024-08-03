@@ -4,6 +4,9 @@ from .models import User
 
 
 def send_confirmation_email(email, token_id, token_key, user_id, auth_token):
+
+    """Function for sending confirmation email for user that registered"""
+
     data = {
         'token_id': str(token_id),
         'user_id': str(user_id),
@@ -18,6 +21,9 @@ def send_confirmation_email(email, token_id, token_key, user_id, auth_token):
               fail_silently=True)
 
 def send_confirm_order(email, token_id, token_key, auth_token, order_id, user_id):
+
+    """Function for sending mail for confirmation of order that user made"""
+
     data = {
         'email': str(email),
         'token_id': str(token_id),

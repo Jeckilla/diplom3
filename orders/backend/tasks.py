@@ -12,7 +12,7 @@ from .models import ConfirmEmailToken, User, Order
 @shared_task
 def password_reset_token_created_task(reset_password_token_created, **kwargs):
 
-    # send an e-mail to the user
+    # send an e-mail to the user to confirm the reset of the password
 
     msg = EmailMultiAlternatives(
         # title:
@@ -29,6 +29,9 @@ def password_reset_token_created_task(reset_password_token_created, **kwargs):
 
 @shared_task
 def send_confirmation_order_task(instance, **kwargs):
+
+    """task for sending email to confirm order"""
+
     order = Order.objects.get(id=instance)
     token = ConfirmEmailToken.objects.create(user=order.user)
     send_confirm_order(email=order.user.email,
@@ -40,6 +43,9 @@ def send_confirmation_order_task(instance, **kwargs):
 
 @shared_task
 def send_confirmation_email_task(instance, **kwargs):
+
+    """task for sending email to confirm email"""
+
     user = User.objects.get(id=instance)
     token = ConfirmEmailToken.objects.create(user=user)
     send_confirmation_email(email=user.email,
