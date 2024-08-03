@@ -33,6 +33,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'baton',
+
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -41,13 +42,17 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'backend.apps.BackendConfig',
+
     'rest_framework',
     'rest_framework.authtoken',
     'django_rest_passwordreset',
     'django_filters',
 
+    'cachalot',
+
     'drf_standardized_errors',
     'drf_spectacular',
+
     'baton.autodiscover',
 ]
 
@@ -208,5 +213,3 @@ CASHES = {
         "LOCATION": "redis://127.0.0.1:16379/1",
     }
 }
-
-

@@ -13,5 +13,16 @@ django-redis==5.4.0
 drf-spectacular==0.27.2
 drf-spectacular-sidecar==2024.7.1
 django-baton==4.1.0
-
+python-memcached==1.62
+pymemcache==4.0.0
+pylibmc==1.6.3
+Jinja2==3.1.4
+MarkupSafe==2.1.5
+beautifulsoup4==4.12.3
+soupsieve==2.5
+tox==4.16.0
+tox-current-env==0.0.11
+coverage==7.6.0
+Pillow==10.4.0
+django-cachalot==2.6.2
 
