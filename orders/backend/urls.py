@@ -3,7 +3,7 @@ from rest_framework.routers import DefaultRouter
 from django.urls import path
 from .views import PartnerUpdate, ShopList, ShopDetails, LoginView, SignUpView, ContactViewSet, ProductsList, \
     LogoutView, OrderItemViewSet, NewOrderViewSet, CategoryViewSet, OrdersView, PartnerListOrders, \
-    PartnerState, ProductInfoView, ProfileView, confirm_email_view, SendConfirmationOrder, OrderDetailsView
+    PartnerState, ProductInfoView, ProfileView, confirm_email_view, OrderDetailsView, confirm_order
 
 r = DefaultRouter()
 r.register('contacts', ContactViewSet, basename='contact')
@@ -28,8 +28,8 @@ urlpatterns = [
     path('shops/<int:pk>/', ShopDetails.as_view(), name='shop_details'),
     path('product_info/', ProductInfoView.as_view(), name='product_info'),
     path('products/', ProductsList.as_view(), name='products'),
-    path('order/confirm/<str:Token>/<int:order_id>/', SendConfirmationOrder.as_view(),
-         name='order_confirm'),
+    path('order/confirm/', NewOrderViewSet.as_view({'post': 'create'}), name='order_confirm'),
+    path('order/confirmed/', confirm_order, name='order_confirmed'),
     path('orders/', OrdersView.as_view(), name='orders'),
-    path('orders/<int:pk>/', OrderDetailsView.as_view(), name='order_detail'),
+    path('order/<int:pk>/', OrderDetailsView.as_view(), name='order_detail'),
 ] + r.urls

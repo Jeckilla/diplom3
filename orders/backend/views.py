@@ -1,19 +1,22 @@
 import yaml
 from django.contrib import auth
-from django.contrib.auth import authenticate
+from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
+from django.core.checks import messages
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.mail import send_mail
 from django.core.validators import URLValidator
 from django.db.models import Q, Sum, F
 from django.dispatch import receiver
-from django.http import JsonResponse, HttpResponseRedirect
+from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.db import IntegrityError
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
+from django.views import View
 from django_filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from requests import get
+from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListAPIView
@@ -389,7 +392,13 @@ class NewOrderViewSet(viewsets.ModelViewSet):
 
         if serializer.is_valid():
             serializer.save()
-            return Response(serializer.data, status=HTTP_201_CREATED)
+            order = Order.objects.filter(user_id=request.user.id,
+                                         state='new').order_by('-created_at').first()
+            order.save()
+            send_confirmation_order_task.delay(instance=order.id)
+
+            return JsonResponse(data={'data': serializer.data, 'message': 'An email has been sent to confirm your order'},
+                                status=HTTP_201_CREATED)
 
         return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
 
@@ -407,6 +416,30 @@ class NewOrderViewSet(viewsets.ModelViewSet):
             instance = self.get_object()
             self.perform_destroy(instance)
             return Response(status=HTTP_204_NO_CONTENT)
+
+
+def confirm_order(request):
+    """Function for confirming order"""
+    token_id = request.GET.get('token_id', None)
+    order_id = request.GET.get('order_id', None)
+    token_key = request.GET.get('token_key', None)
+    auth_token = request.GET.get('auth_token', None)
+    user_id = request.GET.get('user_id', None)
+    user = User.objects.get(pk=user_id)
+    user = authenticate(request, auth_token=auth_token)
+    if token_id is None or order_id is None:
+        return JsonResponse({'Status': False, 'Errors': 'Недостаточно данных для подтверждения заказа'},
+                            status=HTTP_400_BAD_REQUEST)
+    try:
+        login(request, user)
+        token = ConfirmEmailToken.objects.get(pk=token_id)
+        order = Order.objects.get(pk=order_id)
+        order.state = "confirmed"
+        order.save()
+        if order.state == "confirmed":
+            return HttpResponseRedirect(redirect_to=f'http://127.0.0.1:8000/order/{order.id}')
+    except ConfirmEmailToken.DoesNotExist:
+        return JsonResponse({'Status': False, 'Errors': 'Неправильные данные для подтверждения заказа'})
 
 
 class OrderItemViewSet(viewsets.ModelViewSet):
@@ -451,56 +484,6 @@ class OrderItemViewSet(viewsets.ModelViewSet):
             return Response(status=HTTP_204_NO_CONTENT)
 
 
-# class SendEmailConfirmationToken(APIView):
-#     """View for sending email confirmation token"""
-#
-#     permission_classes = [IsAuthenticated,]
-#
-#     def get(self, request):
-#         if not request.user.is_authenticated:
-#             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-#         user = request.user
-#         token = user.confirm_email_tokens.filter(user=user)
-#         return Response(data=token, status=HTTP_200_OK)
-#
-#     def post(self, request):
-#         if not request.user.is_authenticated:
-#             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-#         send_confirmation_email_task.delay(instance=request.user)
-#         return Response(data=None, status=HTTP_201_CREATED)
-
-
-class SendConfirmationOrder(APIView):
-    """View for sending confirmation order"""
-
-    permission_classes = [IsAuthenticated, IsOwner]
-    def post(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'detail': 'Authentication credentials were not provided.'},
-                                status=HTTP_401_UNAUTHORIZED)
-
-        if Order.objects.filter(user_id=request.user.id, state='new').exists():
-            order = Order.objects.filter(user_id=request.user.id,
-                                         state='new').order_by('-created_at').first()
-            Token = request.user.auth_token.key
-
-            confirmation_link = request.build_absolute_uri(reverse('order_confirm', kwargs={'Token': Token, 'order_id': order.id}))
-
-            order.confirmation_link = confirmation_link
-            order.save()
-            send_confirmation_order_task.delay(instance=order.id, confirmation_link=confirmation_link)
-
-            return JsonResponse({'Status': 'An email has been sent to confirm your order'})
-
-        return JsonResponse({'Status': 'Your order is not confirmed'})
-
-    def confirm_order(self, request, order_id, *args, **kwargs):
-        order = Order.objects.get(id=order_id)
-        order.state = 'confirmed'
-        order.save()
-
-        # Redirect to URL with order details
-        return HttpResponseRedirect(reverse('order_details', kwargs={'order_id': order_id}))
 
 
 def confirm_email_view(request):
