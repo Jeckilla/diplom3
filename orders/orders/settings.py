@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+from baton.ai import AIModels
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -31,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'baton',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -46,6 +48,7 @@ INSTALLED_APPS = [
 
     'drf_standardized_errors',
     'drf_spectacular',
+    'baton.autodiscover',
 ]
 
 MIDDLEWARE = [
@@ -205,3 +208,5 @@ CASHES = {
         "LOCATION": "redis://127.0.0.1:16379/1",
     }
 }
+
+

@@ -8,6 +8,7 @@ from .models import (User, Shop, Category, Product, ProductInfo, Parameter, Prod
 class ContactInline(admin.TabularInline):
     model = Contact
     extra = 1
+    classes = ('collapse-entry', 'expand-first',)
 
 
 @admin.register(User)
