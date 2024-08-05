@@ -1,26 +1,111 @@
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <title>Login</title>
+
+    <title>User Registration</title>
+
 </head>
-<div data-gb-custom-block data-tag="load"></div>
 
 <body>
 
-<h1>Profile - {{ profile.name }}</h1>
-
-<form action="">
-
-    <div data-gb-custom-block data-tag="url" data-0='login'></div>" method="POST">
-    <div data-gb-custom-block data-tag="csrf_token"></div>
 
 
 
-<div data-gb-custom-block data-tag="render_form"></div>
+    <h1>User Registration</h1>
 
-    <input type="submit" value="Save">
-</form>
+    <form action="" method="POST">
+
+        {% csrf_token %}
+
+        <label for="username">Username:</label>
+
+        <input type="text" id="username" name="username"><br>
+
+        <label for="email">Email:</label>
+
+        <input type="email" id="email" name="email"><br>
+
+        <label for="password">Password:</label>
+
+        <input type="password" id="password" name="password"><br>
+
+        <input type="submit" value="Register">
+
+    </form>
+
+    <div class="social-auth-buttons">
+
+        <li class="Vkontakte">
+
+            <a href="{% url 'social_auth:begin' 'vk-oauth2' %}">
+
+                Login with VK
+
+            </a>
+
+        </li>
+
+        <li class="google">
+
+            <a href="{% url 'social_auth:begin' 'google-oauth2' %}">
+
+                Login with Google
+
+            </a>
+
+        </li>
+
+        <script src="http://vk.com/js/api/xd_connection.js?2" type="text/javascript"></script>
+
+        <script type="text/javascript">
+
+            VK.init(function() {
+
+                    VK.addCallback("onApplicationAdded", requestRights);
+
+                    VK.addCallback("onSettingsChanged", onSettingsChanged);
+
+                }
+
+            );
+
+
+
+
+            function startConnect() {
+
+                VK.callMethod('showInstallBox');
+
+            }
+
+
+
+
+            function requestRights() {
+
+                VK.callMethod('showSettingsBox', 1 + 2); // 1+2 is just an example
+
+            }
+
+
+
+
+            function onSettingsChanged(settings) {
+
+                window.location.reload();
+
+            }
+
+        </script>
+
+<a href="#" onclick="startConnect(); return false;">Click to authenticate</a>
+
+    </div>
 
 </body>
+
 </html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>User Login</title>
+</head>
+<body>
+    <h1>User Login</h1>
+    <form action="" method="POST">
+        {% csrf_token %}
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username"><br>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password"><br>
+        <input type="submit" value="Login">
+    </form>
+    <div class="social-auth-buttons">
+        <li class="Vkontakte">
+            <a href="{% url 'social:begin' 'vk-oauth2' %}">
+                Login with VK
+            </a>
+        </li>
+        <li class="google">
+            <a href="{% url 'social:begin' 'google-oauth2' %}">
+                Login with Google
+            </a>
+        </li>
+    </div>
+</body>
+</html>
