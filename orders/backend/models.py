@@ -78,6 +78,7 @@ class User(AbstractUser):
             'unique': "A user with that username already exists.",
         },
     )
+    photo = models.ImageField(upload_to='backend/users/images/%Y/%m/%d', null=True, blank=True)
     is_active = models.BooleanField(
         verbose_name='active',
         default=False,
@@ -137,6 +138,7 @@ class Product(models.Model):
     category = models.ForeignKey(Category, verbose_name='Категория',
                                  related_name='products', on_delete=models.CASCADE,
                                  null=True, blank=True)
+    image = models.ImageField(upload_to='backend/products/images/%Y/%m/%d', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Продукт'

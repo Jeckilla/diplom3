@@ -47,8 +47,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_rest_passwordreset',
     'django_filters',
-    'social_django',
-    'django_extensions',
+    'django_social',
+    'django_externals',
 
     'cachalot',
 
