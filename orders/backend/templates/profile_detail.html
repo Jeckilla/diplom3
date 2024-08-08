@@ -11,13 +11,9 @@
 </head>
 
 <body>
-
-
-
-
     <h1>User Registration</h1>
 
-    <form action="" method="POST">
+    <form action="" method="POST" enctype="multipart/form-data">
 
         {% csrf_token %}
 
@@ -34,6 +30,11 @@
         <input type="password" id="password" name="password"><br>
 
         <input type="submit" value="Register">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Upload</button>
+        </form>
 
     </form>
 
@@ -49,17 +50,7 @@
 
         </li>
 
-        <li class="google">
-
-            <a href="{% url 'social_auth:begin' 'google-oauth2' %}">
-
-                Login with Google
-
-            </a>
-
-        </li>
-
-        <script src="http://vk.com/js/api/xd_connection.js?2" type="text/javascript"></script>
+         <script src="http://vk.com/js/api/xd_connection.js?2" type="text/javascript"></script>
 
         <script type="text/javascript">
 
@@ -101,6 +92,18 @@
             }
 
         </script>
+
+        <li class="google">
+
+            <a href="{% url 'social_auth:begin' 'google-oauth2' %}">
+
+                Login with Google
+
+            </a>
+
+        </li>
+
+
 
 <a href="#" onclick="startConnect(); return false;">Click to authenticate</a>
 

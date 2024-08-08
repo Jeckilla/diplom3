@@ -36,6 +36,8 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from .utils import send_confirmation_email
 from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
 from .tasks import send_confirmation_email_task, send_confirmation_order_task
+from .forms import UserProfileForm
+
 # from rest_framework.permissions import permission_classes
 
 from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrderSerializer, \
@@ -511,20 +513,26 @@ def confirm_order(request):
     order_id = request.GET.get('order_id', None)
     auth_token = request.GET.get('auth_token', None)
     user_id = request.GET.get('user_id', None)
+    print(token_id, order_id, auth_token, user_id)
     user = User.objects.get(pk=user_id)
     user = authenticate(request, email=user.email, token=auth_token)
     order = Order.objects.get(pk=order_id)
     if token_id is None or order_id is None:
         return JsonResponse({'Status': False, 'Errors': 'Not all necessary arguments are specified for confirmation'},
                             status=HTTP_400_BAD_REQUEST)
+    if user and user.is_active:
+        login(request, user)
+
     try:
         token = ConfirmEmailToken.objects.get(pk=token_id)
-        if token.user != user:
+        if order.user != token.user:
+            print(order.user, token.user)
             return JsonResponse({'Status': False, 'Errors': 'You are not the owner of this order'},
                                 status=HTTP_400_BAD_REQUEST)
-        order.state = "confirmed"
-        order.save()
-        return JsonResponse({'Status': True, 'order_id': order_id, 'order_state': order.state})
+        else:
+            order.state = "confirmed"
+            order.save()
+            return JsonResponse({'Status': True, 'order_id': order_id, 'order_state': order.state})
     except ConfirmEmailToken.DoesNotExist:
         return JsonResponse({'Status': False, 'Errors': 'Token does not exist'}, status=HTTP_400_BAD_REQUEST)
 

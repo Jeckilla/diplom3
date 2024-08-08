@@ -28,3 +28,4 @@ django-cachalot==2.6.2
 social-auth-app-django==5.4.2
 social-auth-core==4.5.4
 django-extensions==3.2.3
+django-versatileimagefield==3.1

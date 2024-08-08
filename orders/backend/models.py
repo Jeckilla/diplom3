@@ -5,6 +5,8 @@ from django.db import models
 from django_rest_passwordreset.tokens import get_token_generator
 from urllib import response
 
+from versatileimagefield.fields import VersatileImageField, PPOIField
+
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
     ('new', 'Новый'),
@@ -78,7 +80,6 @@ class User(AbstractUser):
             'unique': "A user with that username already exists.",
         },
     )
-    photo = models.ImageField(upload_to='backend/users/images/%Y/%m/%d', null=True, blank=True)
     is_active = models.BooleanField(
         verbose_name='active',
         default=False,
@@ -89,6 +90,13 @@ class User(AbstractUser):
     )
     type = models.CharField(verbose_name='Тип пользователя', choices=USER_TYPE_CHOICES, max_length=5, default='buyer')
     email_confirm = models.BooleanField(verbose_name='Подтвержден', default=False)
+    headshot = VersatileImageField(
+        'Headshot',
+        upload_to='orders/media/user/headshots/',
+        ppoi_field='headshot_ppoi', null=True, blank=True
+    )
+    headshot_ppoi = PPOIField()
+
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
@@ -138,7 +146,6 @@ class Product(models.Model):
     category = models.ForeignKey(Category, verbose_name='Категория',
                                  related_name='products', on_delete=models.CASCADE,
                                  null=True, blank=True)
-    image = models.ImageField(upload_to='backend/products/images/%Y/%m/%d', null=True, blank=True)
 
     class Meta:
         verbose_name = 'Продукт'

@@ -6,6 +6,7 @@ from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
                      Product, Category, Shop, User, Contact)
 from rest_framework.authtoken.models import Token
 from rest_framework.validators import ValidationError
+from versatileimagefield.serializers import VersatileImageFieldSerializer
 
 
 class SignUpSerializer(serializers.ModelSerializer):
@@ -222,9 +223,10 @@ class OrderSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     """Serializer of user"""
     contacts = ContactSerializer(read_only=True, many=True)
+    headshot = VersatileImageFieldSerializer(sizes='person_headshot')
 
     class Meta:
         model = User
         fields = ['email', 'first_name', 'last_name',
-                  'username', 'company', 'position', 'type', 'contacts', 'email_confirm', 'is_active']
+                  'username', 'company', 'position', 'type', 'contacts', 'email_confirm', 'is_active', 'headshot']
 

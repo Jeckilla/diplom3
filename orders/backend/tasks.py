@@ -40,6 +40,7 @@ def send_confirmation_order_task(instance, **kwargs):
                             order_id=order.id,
                             auth_token=order.user.auth_token,
                             user_id=order.user.id)
+    print(order.user.id)
 
 @shared_task
 def send_confirmation_email_task(instance, **kwargs):
