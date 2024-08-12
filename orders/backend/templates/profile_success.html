@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Profile Updated Successfully</title>
+    <title>{request.user} Profile Updated Successfully</title>
 </head>
 <body>
-    <h1>Profile Updated Successfully!</h1>
+    <h1>{request.user} Profile Updated Successfully!</h1>
+
+    {% csrf_token %}
+
+    <button onclick="window.location.href='{% url 'profile_detail' %}'">Back to Profile</button>
 </body>
 </html>

@@ -6,108 +6,89 @@
 
     <meta charset="UTF-8">
 
-    <title>User Registration</title>
+    <title>Profile</title>
 
 </head>
 
 <body>
-    <h1>User Registration</h1>
-
-    <form action="" method="POST" enctype="multipart/form-data">
+    <h1>Profile</h1>
+    {% if user.is_authenticated %}
 
         {% csrf_token %}
 
-        <label for="username">Username:</label>
+        {% if user.type == 'shop' %}
 
-        <input type="text" id="username" name="username"><br>
+            <h2>Shop Profile</h2>
 
-        <label for="email">Email:</label>
+        {% else %}
 
-        <input type="email" id="email" name="email"><br>
+            <h2>User Profile</h2>
 
-        <label for="password">Password:</label>
+        {% endif %}
 
-        <input type="password" id="password" name="password"><br>
+    {% endif %}
 
-        <input type="submit" value="Register">
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Upload</button>
-        </form>
+    {% if user.type == 'user' %}
 
+        <h3>User Info</h3>
+
+    {% endif %}
+
+    <form action="{% url 'profile_change' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+    <label for="username">Username: {{ user.username }} </label><br>
+        <input type="text" id="username" name="username" value="{{ form.username.value }}"><br>
+    <label for="email">Email: {{ user.email }}</label><br>
+        <input type="email" id="email" name="email" value="{{ form.email.value }}"><br>
+    <label for="first_name">First name: {{ user.first_name }}</label><br>
+        <input type="text" id="first_name" name="first_name" value="{{ form.first_name.value }}"><br>
+    <label for="last_name">Last name: {{ user.last_name }}</label><br>
+        <input type="text" id="last_name" name="last_name" value="{{ form.last_name.value }}"><br>
+    <label for="company">Company: {{ user.company }}</label><br>
+        <input type="text" id="company" name="company" value="{{ form.company.value }}"><br>
+    <label for="position">Position: {{ user.position }}</label><br>
+        <input type="text" id="position" name="position" value="{{ form.position.value }}"><br>
+
+        {% if user.photo %}
+            <img src="{{ user.photo.url }}" alt="Аватар пользователя" class="img-fluid rounded_circle"
+             style="width: 100px; height: 100px;">
+        {% else %}
+            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Аватар пользователя" class="img-fluid rounded_circle"
+             style="width: 100px; height: 100px;">
+        {% endif %}
+        <input type="file" class="form-control mt-3" id="photo" name="photo" accept="image/*">
+        {% if form.photo.errors %}
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ form.photo.errors }}
+            </div>
+        {% endif %}
+        <br>
+
+        <button type="submit" href="{% url 'profile' %}">Сохранить изменения</button><br>
     </form>
 
-    <div class="social-auth-buttons">
+    {% if user.type == 'shop' %}
 
-        <li class="Vkontakte">
+        <h3>Shop Info</h3>
 
-            <a href="{% url 'social_auth:begin' 'vk-oauth2' %}">
+    {% endif %}
 
-                Login with VK
+    {% if user.type == 'shop' %}
 
-            </a>
+        <label for="shop_name">Shop Name: {{ user.shop.name }}</label>
 
-        </li>
+        <input type="text" id="shop_name" name="shop_name"><br>
 
-         <script src="http://vk.com/js/api/xd_connection.js?2" type="text/javascript"></script>
+    {% endif %}
 
-        <script type="text/javascript">
+    {% if user.type == 'shop' %}
 
-            VK.init(function() {
+        <label for="shop_description">Shop Description: {{ user.shop.description }}</label>
 
-                    VK.addCallback("onApplicationAdded", requestRights);
+        <input type="text" id="shop_description" name="shop_description"><br>
 
-                    VK.addCallback("onSettingsChanged", onSettingsChanged);
-
-                }
-
-            );
-
-
-
-
-            function startConnect() {
-
-                VK.callMethod('showInstallBox');
-
-            }
-
-
-
-
-            function requestRights() {
-
-                VK.callMethod('showSettingsBox', 1 + 2); // 1+2 is just an example
-
-            }
-
-
-
-
-            function onSettingsChanged(settings) {
-
-                window.location.reload();
-
-            }
-
-        </script>
-
-        <li class="google">
-
-            <a href="{% url 'social_auth:begin' 'google-oauth2' %}">
-
-                Login with Google
-
-            </a>
-
-        </li>
-
-
-
-<a href="#" onclick="startConnect(); return false;">Click to authenticate</a>
-
-    </div>
+    {% endif %}
 
 </body>
 

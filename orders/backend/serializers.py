@@ -106,7 +106,7 @@ class ProductInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductInfo
-        fields = ('id', 'model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'product_parameters',)
+        fields = ('id', 'model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'image', 'product_parameters',)
         read_only_fields = ('id',)
 
 
@@ -222,11 +222,18 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer of user"""
+    email = serializers.EmailField(read_only=True)
+    first_name = serializers.CharField(max_length=100)
+    last_name = serializers.CharField(max_length=100)
+    username = serializers.CharField(max_length=150)
+    company = serializers.CharField(max_length=150)
+    position = serializers.CharField(max_length=150)
+    type = serializers.CharField(max_length=150)
     contacts = ContactSerializer(read_only=True, many=True)
-    headshot = VersatileImageFieldSerializer(sizes='person_headshot')
+    photo = serializers.ImageField(read_only=True)
 
     class Meta:
         model = User
         fields = ['email', 'first_name', 'last_name',
-                  'username', 'company', 'position', 'type', 'contacts', 'email_confirm', 'is_active', 'headshot']
+                  'username', 'company', 'position', 'type', 'contacts', 'email_confirm', 'is_active', 'photo']
 

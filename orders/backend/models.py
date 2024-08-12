@@ -5,7 +5,7 @@ from django.db import models
 from django_rest_passwordreset.tokens import get_token_generator
 from urllib import response
 
-from versatileimagefield.fields import VersatileImageField, PPOIField
+# from versatileimagefield.fields import VersatileImageField, PPOIField
 
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
@@ -59,6 +59,10 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, **extra_fields)
 
 
+# def headshot_file_name(instance, filename):
+#     # Generate a custom filename based on the parameter provided
+#     return f'user_{instance.username}/{filename}'
+
 class User(AbstractUser):
     """
     Стандартная модель пользователей
@@ -90,12 +94,12 @@ class User(AbstractUser):
     )
     type = models.CharField(verbose_name='Тип пользователя', choices=USER_TYPE_CHOICES, max_length=5, default='buyer')
     email_confirm = models.BooleanField(verbose_name='Подтвержден', default=False)
-    headshot = VersatileImageField(
-        'Headshot',
-        upload_to='orders/media/user/headshots/',
-        ppoi_field='headshot_ppoi', null=True, blank=True
+    photo = models.ImageField(
+        'Photo',
+        upload_to='users',
+        null=True, blank=True
     )
-    headshot_ppoi = PPOIField()
+    # headshot_ppoi = PPOIField()
 
 
     def __str__(self):
@@ -165,6 +169,10 @@ class ProductInfo(models.Model):
     quantity = models.PositiveIntegerField(verbose_name='Количество')
     price = models.PositiveIntegerField(verbose_name='Цена')
     price_rrc = models.PositiveIntegerField(verbose_name='Цена_ррц')
+    image = models.URLField(verbose_name='Изображение', blank=True)
+
+    def __str__(self):
+        return f'{self.product.name} {self.shop.name}'
 
     class Meta:
         verbose_name = 'Информация о продукте'

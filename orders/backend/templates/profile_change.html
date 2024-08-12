@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Profile</title>
+</head>
+<body>
+    <h1>Edit Profile</h1>
+    {% csrf_token %}
+
+    <form action= "{% url 'profile_change' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <br>
+
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" value="{{ user.username }}"><br>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" value="{{ user.email }}"><br>
+
+        <label for="first_name">First name:</label>
+        <input type="text" id="first_name" name="first_name" value="{{ user.first_name }}"><br>
+
+        <label for="last_name">Last name:</label>
+        <input type="text" id="last_name" name="last_name" value="{{ user.last_name }}"><br>
+
+        <label for="company">Company:</label>
+        <input type="text" id="company" name="company" value="{{ user.company }}"><br>
+
+        <label for="position">Position:</label>
+        <input type="text" id="position" name="position" value="{{ user.position }}"><br>
+
+        <label for="photo">Profile Photo:</label>
+        <input type="file" id="photo" name="photo" value="{{ user.photo }}"><br>
+
+        {% if user.photo %}
+            <img src="{{ user.photo.url }}" alt="Аватар пользователя" class="img-fluid rounded_circle"
+             style="width: 100px; height: 100px;">
+        {% else %}
+            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png" alt="Аватар пользователя" class="img-fluid rounded_circle"
+             style="width: 100px; height: 100px;">
+        {% endif %}
+
+        <br>
+
+        <button type="button" onclick="submitForm()">Сохранить изменения</button><br>
+    </form>
+
+    <script>
+        function submitForm() {
+            document.forms[0].submit();
+        }
+    </script>
+</body>
+</html>

@@ -1,10 +1,14 @@
+from datetime import datetime
+
 import yaml
 from django.contrib import auth
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.core.checks import messages
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.files.storage import FileSystemStorage
 from django.core.mail import send_mail
+from django.core.serializers import json
 from django.core.validators import URLValidator
 from django.db.models import Q, Sum, F
 from django.dispatch import receiver
@@ -13,6 +17,7 @@ from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
+from django.views.decorators.http import require_http_methods
 from django_filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from requests import get
@@ -36,7 +41,7 @@ from rest_framework.renderers import TemplateHTMLRenderer
 from .utils import send_confirmation_email
 from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
 from .tasks import send_confirmation_email_task, send_confirmation_order_task
-from .forms import UserProfileForm
+from .forms import UserProfileForm, LoginForm
 
 # from rest_framework.permissions import permission_classes
 
@@ -88,16 +93,17 @@ class LoginView(APIView):
     serializer_class = LoginSerializer
 
     def get(self, request):
-        content = {
-            'user': str(request.user),
+        context = {
+            'form': LoginForm,
             'auth': str(request.auth),
         }
-        return Response(data=content, status=status.HTTP_200_OK)
+        return render(request=request, template_name='login.html', context=context, status=status.HTTP_200_OK)
 
     def post(self, request):
-        email = request.data.get('email')
-        password = request.data.get('password')
-        user = authenticate(email=email, password=password)
+        form = LoginForm(request.POST)
+        if not form.is_valid():
+            return Response(data={'message': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
+        user = authenticate(email=request.POST.email, password=request.POST.password)
 
         if user is not None:
             response = {
@@ -136,23 +142,31 @@ class ProfileView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+
     def get(self, request, *args, **kwargs):
-        if not request.user.is_authenticated:
-            return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data, status=HTTP_200_OK)
+        form = UserProfileForm(instance=request.user)
+        return render(request, 'profile_detail.html', {'title': 'Profile', 'form': form})
 
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
-        try:
-            serializer = UserSerializer(request.user, data=request.data)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save()
-                return Response(serializer.data, status=HTTP_200_OK)
-            return None
-        except (request.user.DoesNotExist, request.user.email.MultipleObjectsReturned) as e:
-            return Response({'detail': str(e)}, status=HTTP_400_BAD_REQUEST)
+        if request.method == 'POST':
+
+            form = UserProfileForm(data=request.POST, instance=request.user, files=request.FILES)
+            self.handle_uploaded_file(request.FILES['photo'])
+            if form.is_valid():
+                form.save()
+                return HttpResponseRedirect(reverse('profile'))
+            else:
+                return render(request, 'profile_detail.html', {'title': 'Profile', 'form': form})
+        else:
+            return JsonResponse({'detail': 'Method not allowed for request method.'}, status=405)
+
+    def handle_uploaded_file(self, f):
+        with open(f'media/profile_photo_{f.name}', 'wb+') as destination:
+            for chunk in f.chunks():
+                destination.write(chunk)
+            print(f.name)
 
 
 class LogoutView(APIView):

@@ -3,7 +3,8 @@ from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
-from .authentication import social_auth, social_auth_complete
+
+from .authentication import social_auth, social_auth_complete, google_auth_callback
 from .views import PartnerUpdate, ShopList, ShopDetails, LoginView, SignUpView, ContactViewSet, ProductsList, \
     LogoutView, OrderItemViewSet, NewOrderViewSet, CategoryViewSet, OrdersView, PartnerListOrders, \
     PartnerState, ProductInfoView, ProfileView, confirm_email_view, OrderDetailsView, confirm_order
@@ -27,10 +28,13 @@ urlpatterns = [
     path('social-auth/login/vk-oauth2/', social_auth, name='vk_oauth2_login'),
     path('social/complete/vk-oauth2/', social_auth_complete, name='vk_oauth2_complete'),
     path('social-auth/login/google-oauth2/', social_auth, name='google_oauth2_login'),
-    path('social/complete/google-oauth2/', social_auth_complete, name='google_oauth2_complete'),
+    path('social/complete/google-oauth2/<str:state>&<str:code>&<str:scope>/', social_auth_complete,
+         name='google_oauth2_complete'),
+    path('google-auth-callback/', google_auth_callback, name='google_auth_callback'),
     path('user/login/', LoginView.as_view(), name='login'),
     path('user/confirmed_email/', confirm_email_view, name='confirmed_email_view'),
     path('accounts/profile/', ProfileView.as_view(), name='profile'),
+    path('accounts/profile_change/', ProfileView.as_view(), name='profile_change'),
     path('user/logout/', LogoutView.as_view(), name='logout'),
     path('shops/', ShopList.as_view(), name='shop_list'),
     path('shops/<int:pk>/', ShopDetails.as_view(), name='shop_details'),
