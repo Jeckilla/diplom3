@@ -7,7 +7,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 from .authentication import social_auth, social_auth_complete, google_auth_callback
 from .views import PartnerUpdate, ShopList, ShopDetails, LoginView, SignUpView, ContactViewSet, ProductsList, \
     LogoutView, OrderItemViewSet, NewOrderViewSet, CategoryViewSet, OrdersView, PartnerListOrders, \
-    PartnerState, ProductInfoView, ProfileView, confirm_email_view, OrderDetailsView, confirm_order
+    PartnerState, ProductInfoView, ProfileView, confirm_email_view, OrderDetailsView, confirm_order, ProductDetailsView
 
 r = DefaultRouter()
 r.register('contacts', ContactViewSet, basename='contact')
@@ -38,8 +38,9 @@ urlpatterns = [
     path('user/logout/', LogoutView.as_view(), name='logout'),
     path('shops/', ShopList.as_view(), name='shop_list'),
     path('shops/<int:pk>/', ShopDetails.as_view(), name='shop_details'),
-    path('product_info/', ProductInfoView.as_view(), name='product_info'),
     path('products/', ProductsList.as_view(), name='products'),
+    path('products/<int:pk>/', ProductDetailsView.as_view(), name='product_details'),
+    path('product_info/', ProductInfoView.as_view(), name='product_info'),
     path('order/confirm/', NewOrderViewSet.as_view({'post': 'create'}), name='order_confirm'),
     path('order/confirmed/', confirm_order, name='order_confirmed'),
     path('orders/', OrdersView.as_view(), name='orders'),
@@ -48,4 +49,5 @@ urlpatterns = [
     # Optional UI:
     path('schema/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
     path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
 ] + r.urls

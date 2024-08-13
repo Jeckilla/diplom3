@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 import yaml
@@ -25,6 +26,7 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.generics import ListAPIView
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.status import HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK, \
     HTTP_204_NO_CONTENT, HTTP_404_NOT_FOUND, HTTP_403_FORBIDDEN
@@ -40,13 +42,14 @@ from rest_framework.renderers import TemplateHTMLRenderer
 
 from .utils import send_confirmation_email
 from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop
-from .tasks import send_confirmation_email_task, send_confirmation_order_task
+from .tasks import send_confirmation_email_task, send_confirmation_order_task, generate_thumbnail_task
 from .forms import UserProfileForm, LoginForm
 
 # from rest_framework.permissions import permission_classes
 
 from .serializers import ShopSerializer, SignUpSerializer, LoginSerializer, ProductSerializer, OrderSerializer, \
-    ContactSerializer, OrderItemSerializer, CategorySerializer, ProductInfoSerializer, UserSerializer
+    ContactSerializer, OrderItemSerializer, CategorySerializer, ProductInfoSerializer, UserSerializer, \
+    ProductDetailsSerializer
 from .models import (Order, OrderItem, ProductInfo, ProductParameter, Parameter,
                      Product, Category, Shop, User, Contact, ConfirmEmailToken)
 
@@ -145,7 +148,7 @@ class ProfileView(APIView):
 
     def get(self, request, *args, **kwargs):
         form = UserProfileForm(instance=request.user)
-        return render(request, 'profile_detail.html', {'title': 'Profile', 'form': form})
+        return render(request, 'profile_change.html', {'title': 'Change Profile', 'form': form})
 
     def post(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -284,6 +287,8 @@ class PartnerListOrders(APIView):
         get(self, request) for get orders
     """
 
+    pagination_class = [PageNumberPagination]
+
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
             return JsonResponse({'detail': 'Authentication credentials were not provided.'}, status=HTTP_401_UNAUTHORIZED)
@@ -333,6 +338,37 @@ class CategoryViewSet(ModelViewSet):
     search_fields = ['name', ]
 
 
+class ProductDetailsView(APIView):
+
+    """View for getting details of product"""
+
+    throttle_classes = [AnonRateThrottle, UserRateThrottle]
+    def get(self, request, pk):
+        try:
+            product = Product.objects.get(id=pk)
+        except Product.DoesNotExist:
+            return Response("Product not found", status=status.HTTP_404_NOT_FOUND)
+
+        generate_thumbnail_task.delay(instance=product.id)
+        thumbnail_path = generate_thumbnail_path(product.id)
+        product.thumbnail = thumbnail_path
+        product.save()
+
+        serializer = ProductDetailsSerializer(product)
+        return Response(serializer.data)
+
+
+
+
+def generate_thumbnail_path(product_id):
+    product = Product.objects.get(id=product_id)
+    thumbnail_directory = 'products_images'
+    image_path = product.image.path
+    thumbnail_path = os.path.join(thumbnail_directory, os.path.basename(image_path))
+
+    return thumbnail_path
+
+
 class ProductsList(APIView):
 
     """View for getting list of products"""
@@ -341,6 +377,7 @@ class ProductsList(APIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     search_fields = ['model', ]
     filterset_fields = ['category', 'model', 'shop', 'price']
+    pagination_class = [PageNumberPagination]
 
     def get(self, request):
         products = Product.objects.all().order_by('name')
@@ -353,6 +390,7 @@ class OrdersView(APIView):
     """View for getting list of orders"""
 
     permission_classes = [IsAuthenticated, IsOwner]
+    pagination_class = [PageNumberPagination]
 
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -378,6 +416,7 @@ class OrderDetailsView(APIView):
     """
 
     permission_classes = [IsAuthenticated, IsOwner]
+    pagination_class = [PageNumberPagination]
 
     def get(self, request, pk):
         if not request.user.is_authenticated:
@@ -449,6 +488,7 @@ class ProductInfoView(APIView):
     """View for getting list of product info"""
 
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
+    pagination_class = [PageNumberPagination]
 
     def get(self, request, *args, **kwargs):
         query = Q(shop__state=True)
@@ -570,6 +610,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
     permission_classes = [IsAuthenticated, IsOwner]
+    pagination_class = [PageNumberPagination]
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

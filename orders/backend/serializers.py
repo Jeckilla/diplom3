@@ -84,10 +84,12 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     """Serializer of products"""
     category = serializers.StringRelatedField()
+    image = VersatileImageFieldSerializer(sizes='product_images')
 
     class Meta:
         model = Product
-        fields = ('id', 'name', 'category',)
+        fields = ('id', 'name', 'category', 'image')
+
 
 
 class ProductParameterSerializer(serializers.ModelSerializer):
@@ -106,8 +108,25 @@ class ProductInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductInfo
-        fields = ('id', 'model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'image', 'product_parameters',)
+        fields = ('id', 'model', 'product', 'shop', 'quantity', 'price', 'price_rrc', 'product_parameters',)
         read_only_fields = ('id',)
+
+
+class ProductDetailsSerializer(serializers.ModelSerializer):
+    """Serializer of product details"""
+    category = CategorySerializer(read_only=True)
+    image = VersatileImageFieldSerializer(sizes='product_images')
+
+    def update(self, instance, validated_data):
+        instance.name = validated_data.get('name', instance.name)
+        instance.category = validated_data.get('category', instance.category)
+        instance.image = validated_data.get('image', instance.image)
+        instance.save()
+        return instance
+
+    class Meta:
+        model = Product
+        fields = ['name', 'category', 'image']
 
 
 class ContactSerializer(serializers.ModelSerializer):

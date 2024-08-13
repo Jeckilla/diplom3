@@ -5,6 +5,8 @@ from django.db import models
 from django_rest_passwordreset.tokens import get_token_generator
 from urllib import response
 
+from versatileimagefield.fields import VersatileImageField, PPOIField
+
 # from versatileimagefield.fields import VersatileImageField, PPOIField
 
 STATE_CHOICES = (
@@ -96,10 +98,9 @@ class User(AbstractUser):
     email_confirm = models.BooleanField(verbose_name='Подтвержден', default=False)
     photo = models.ImageField(
         'Photo',
-        upload_to='users',
+        upload_to='media/users/',
         null=True, blank=True
     )
-    # headshot_ppoi = PPOIField()
 
 
     def __str__(self):
@@ -150,6 +151,9 @@ class Product(models.Model):
     category = models.ForeignKey(Category, verbose_name='Категория',
                                  related_name='products', on_delete=models.CASCADE,
                                  null=True, blank=True)
+    image = VersatileImageField(upload_to='products_images/',
+                                verbose_name='Изображение', blank=True, null=True, ppoi_field='ppoi')
+    ppoi = PPOIField('Image Point of Interest')
 
     class Meta:
         verbose_name = 'Продукт'
@@ -169,7 +173,6 @@ class ProductInfo(models.Model):
     quantity = models.PositiveIntegerField(verbose_name='Количество')
     price = models.PositiveIntegerField(verbose_name='Цена')
     price_rrc = models.PositiveIntegerField(verbose_name='Цена_ррц')
-    image = models.URLField(verbose_name='Изображение', blank=True)
 
     def __str__(self):
         return f'{self.product.name} {self.shop.name}'
