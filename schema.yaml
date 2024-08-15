@@ -1,9 +1,9 @@
 openapi: 3.0.3
 info:
-  title: Diplom API for orders
+  title: Diplom API for api
   version: 1.0.0
   description: Project API with DRF for users can ordering products and partners (shops)
-    load products and get orders on his products
+    load products and get api on his products
 paths:
   /basket/:
     get:
@@ -827,9 +827,9 @@ paths:
   /orders/:
     get:
       operationId: orders_retrieve
-      description: View for getting list of orders
+      description: View for getting list of api
       tags:
-      - orders
+      - api
       security:
       - cookieAuth: []
       - tokenAuth: []

@@ -29,3 +29,8 @@ social-auth-app-django==5.4.2
 social-auth-core==4.5.4
 django-extensions==3.2.3
 django-versatileimagefield==3.1
+django-baton==4.1.0
+exceptiongroup==1.2.2
+iniconfig==2.0.0
+pytest==8.3.2
+pytest-django==4.8.0

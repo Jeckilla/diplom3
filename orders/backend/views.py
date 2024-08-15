@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 
 import yaml
+from django.conf import settings
 from django.contrib import auth
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
@@ -358,14 +359,11 @@ class ProductDetailsView(APIView):
         return Response(serializer.data)
 
 
-
-
 def generate_thumbnail_path(product_id):
     product = Product.objects.get(id=product_id)
     thumbnail_directory = 'products_images'
     image_path = product.image.path
-    thumbnail_path = os.path.join(thumbnail_directory, os.path.basename(image_path))
-
+    thumbnail_path = os.path.join('https://127.0.0.1:8000/', thumbnail_directory, os.path.basename(image_path))
     return thumbnail_path
 
 

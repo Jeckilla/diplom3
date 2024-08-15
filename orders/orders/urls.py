@@ -1,5 +1,5 @@
 """
-URL configuration for orders project.
+URL configuration for api project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.0/topics/http/urls/
@@ -28,6 +28,7 @@ urlpatterns = [
     path('baton/', include('baton.urls')),
     path('social/', include('social_django.urls')),
     path('social-auth/', include('social_django.urls')),
+
 ]
 
 if settings.DEBUG:

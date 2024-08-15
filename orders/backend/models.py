@@ -7,7 +7,6 @@ from urllib import response
 
 from versatileimagefield.fields import VersatileImageField, PPOIField
 
-# from versatileimagefield.fields import VersatileImageField, PPOIField
 
 STATE_CHOICES = (
     ('basket', 'Статус корзины'),
