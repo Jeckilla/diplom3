@@ -23,7 +23,7 @@ soupsieve==2.5
 tox==4.16.0
 tox-current-env==0.0.11
 coverage==7.6.0
-Pillow==10.4.0
+pillow==10.4.0
 django-cachalot==2.6.2
 social-auth-app-django==5.4.2
 social-auth-core==4.5.4
@@ -34,3 +34,13 @@ exceptiongroup==1.2.2
 iniconfig==2.0.0
 pytest==8.3.2
 pytest-django==4.8.0
+uritemplate==4.1.1
+urllib3==2.2.1
+vine==5.1.0
+virtualenv==20.26.3
+wcwidth==0.2.13
+Werkzeug==3.0.3
+python-dateutil==2.9.0.post0
+python-magic==0.4.27
+model-bakery==1.19.1
+oauthlib==3.2.2

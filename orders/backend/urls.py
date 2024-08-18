@@ -51,5 +51,5 @@ urlpatterns = [
     path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('categories/', CategoryViewSet.as_view({'get': 'list'}), name='category_list'),
     path('contacts/', ContactViewSet.as_view({'get': 'list'}), name='contacts'),
-    path('sentry-debug/', trigger_error),
+    # path('sentry-debug/', trigger_error),
 ] + r.urls

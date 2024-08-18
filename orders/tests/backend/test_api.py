@@ -1,14 +1,11 @@
-import mixer
+from django.test import TestCase
 from rest_framework.test import APITestCase, APIClient, force_authenticate, APIRequestFactory
 from rest_framework import status
 from django.urls import reverse
 import os
 from django.conf import settings
 import pytest
-
-
-
-
+from mixer.backend.django import mixer
 from rest_framework.authtoken.models import Token
 from unittest.mock import patch
 
@@ -18,7 +15,6 @@ from orders.backend.views import generate_thumbnail_path, SignUpView, LoginView
 from django.contrib.auth.models import User
 from rest_framework.settings import api_settings
 from model_bakery import baker
-
 
 
 
@@ -71,15 +67,14 @@ def order_item_factory(instance):
 
 @pytest.fixture
 def order_factory(user):
-    def factory(client, user, *args, **kwargs):
+    def factory(client, user, token, *args, **kwargs):
         instance = baker.make(ProductInfo, *args, **kwargs)
         order_item = baker.make(OrderItem, product_info=instance)
-        order = baker.make(Order, order_items=order_item, *args, **kwargs)
+        user = baker.make(User, *args, **kwargs)
 
-        token = Token.objects.get(user=user)
         client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
 
-        return baker.make(Order, order_items=order_item, *args, **kwargs)  # Replace 'order_item' with the actual OrderItem instance
+        return baker.make(Order, order_items=order_item, user=user, *args, **kwargs)
 
     return factory
 
@@ -100,36 +95,36 @@ def product_factory(instance):
     return factory
 
 
-class TestSignUpView(APITestCase):
-    def test_post_valid_data(self):
-        factory = APIRequestFactory()
-        view = SignUpView.as_view()
-        user_data = {
-            'first_name': 'John',
-            'last_name': 'Doe',
-            'email': 'john.doe@example.com',
-            'username': 'johndoe',
-            'password': 'securepassword'
-        }
-        request = factory.post('/api/signup/', data=user_data, format='json')
-        force_authenticate(request, user=None)
-        response = view(request)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+def test_post_valid_data_signup():
+    factory = APIRequestFactory()
+    view = SignUpView.as_view()
+    user_data = {
+        'first_name': 'John',
+        'last_name': 'Doe',
+        'email': 'john.doe@example.com',
+        'username': 'johndoe',
+        'password': 'securepassword'
+    }
+    request = factory.post('/api/signup/', data=user_data, format='json')
+    force_authenticate(request, user=None)
+    response = view(request)
+    assert response.status_code == status.HTTP_201_CREATED
 
-    def test_post_invalid_data(self):
-        factory = APIRequestFactory()
-        view = SignUpView.as_view()
-        user_data = {
-            'first_name': 'John',
-            'last_name': 'Doe',
-            'email': 'invalid_email',  # Invalid email format
-            'username': 'johndoe',
-            'password': 'short'  # Password too short
-        }
-        request = factory.post('/api/signup/', data=user_data, format='json')
-        force_authenticate(request, user=None)
-        response = view(request)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+def test_post_invalid_data():
+    factory = APIRequestFactory()
+    view = SignUpView.as_view()
+    user_data = {
+        'first_name': 'John',
+        'last_name': 'Doe',
+        'email': 'invalid_email',  # Invalid email format
+        'username': 'johndoe',
+        'password': 'short'  # Password too short
+    }
+    request = factory.post('/api/signup/', data=user_data, format='json')
+    force_authenticate(request, user=None)
+    response = view(request)
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 class TestLoginView(APITestCase):
@@ -183,8 +178,7 @@ class ShopTests(APITestCase):
             self.assertEqual(data[shop[0]]['filename'], shop[1].filename)
 
 
-
-    def test_get_shop_detail(self):
+    def test_get_shop_detail(self, client):
         Shop.objects.create(name='Shop 1', url='https://shop1.com', filename='shop1.png')
         url = reverse('/shop_details/')
 
@@ -196,7 +190,6 @@ class ShopTests(APITestCase):
         self.assertEqual(data['filename'], 'shop1.png')
 
 
-
 @pytest.mark.django_db
 class OrdersViewTests(APITestCase):
 
@@ -205,7 +198,7 @@ class OrdersViewTests(APITestCase):
         self.token = Token.objects.create(user=self.user)
         self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
 
-    def test_get_orders_list_authenticated(self, order_factory, user, token):
+    def test_get_orders_list_authenticated(self, order_factory, user, token, client):
 
         order_items = order_item_factory(_quantity=2)
         orders = order_factory(_quantity=2, user=user, order_items=order_items)
@@ -270,6 +263,7 @@ class ProductsListTests(APITestCase):
         for product in enumerate(products):
             self.assertEqual(response.data[product[0]]['name'], product[1].name)
 
+
 @pytest.mark.django_db
 class OrderDetailsViewTests(APITestCase):
 
@@ -296,15 +290,14 @@ class OrderDetailsViewTests(APITestCase):
         response = self.client.get(url)
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
-
-    def test_delete_order_authenticated(self):
+    def test_delete_order_authenticated(self, client, user, token):
         self.client.force_authenticate(user=self.user)
         url = reverse('orders/<str:pk>/', kwargs={'pk': 1})
 
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_delete_order_unauthenticated(self):
+    def test_delete_order_unauthenticated(self, client):
         self.client.force_authenticate(user=None)
         url = reverse('orders/<str:pk>/', kwargs={'pk': 1})
 
@@ -315,9 +308,9 @@ class OrderDetailsViewTests(APITestCase):
 @pytest.mark.django_db
 class ProductInfoViewTests(APITestCase):
 
-    def setUp(self, product_info_factory, shop, category, client):
-        self.shop = shop
-        self.category = category
+    def setUp(self, product_info_factory, client):
+        self.shop = Shop.objects.create(name='Shop 1', url='https://shop1.com', filename='shop1.png')
+        self.category = Category.objects.create(name='Category 1')
         self.product_info = product_info_factory(shop=self.shop, category=self.category)
 
     def test_get_product_info_with_filters(self, product_info_factory, client):
@@ -384,10 +377,9 @@ class OrderItemViewSetTests(APITestCase):
 
     def test_delete_order_item_authenticated(self, order_item_factory, client, user, token, order_factory):
         order_items = order_item_factory(_quantity=1)
-        order_item_id = order_items[0].id  # Replace with the actual ID of the order item to delete
+        order_item_id = order_items[0].id
         url = reverse('basket/', kwargs={'pk': order_item_id})
 
         response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-
 

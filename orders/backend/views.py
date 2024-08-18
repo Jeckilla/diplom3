@@ -608,7 +608,7 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
     permission_classes = [IsAuthenticated, IsOwner]
-    pagination_class = [PageNumberPagination]
+
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
