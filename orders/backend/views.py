@@ -107,7 +107,7 @@ class LoginView(APIView):
         form = LoginForm(request.POST)
         if not form.is_valid():
             return Response(data={'message': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
-        user = authenticate(email=request.POST.email, password=request.POST.password)
+        user = authenticate(email=request.POST['email'], password=request.POST['password'])
 
         if user is not None:
             response = {
