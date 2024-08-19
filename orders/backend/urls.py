@@ -4,7 +4,7 @@ from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 
-from .authentication import social_auth, social_auth_complete, google_auth_callback
+from .authentication import social_auth, social_auth_complete, google_auth_complete, google_auth, google_auth_callback
 from .views import PartnerUpdate, ShopList, ShopDetails, LoginView, SignUpView, ContactViewSet, ProductsList, \
     LogoutView, OrderItemViewSet, NewOrderViewSet, CategoryViewSet, OrdersView, PartnerListOrders, \
     PartnerState, ProductInfoView, ProfileView, confirm_email_view, OrderDetailsView, confirm_order, ProductDetailsView
@@ -27,10 +27,10 @@ urlpatterns = [
     path('social-auth/', include('social_django.urls', namespace='social_auth')),
     path('social-auth/login/vk-oauth2/', social_auth, name='vk_oauth2_login'),
     path('social/complete/vk-oauth2/', social_auth_complete, name='vk_oauth2_complete'),
-    path('social-auth/login/google-oauth2/', social_auth, name='google_oauth2_login'),
-    path('social/complete/google-oauth2/<str:state>&<str:code>&<str:scope>/', social_auth_complete,
+    path('social-auth/login/google-oauth2/', google_auth, name='google_oauth2_login'),
+    path('social/complete/google-oauth2/<str:state>&<str:code>&<str:scope>/', google_auth_complete,
          name='google_oauth2_complete'),
-    path('google-auth-callback/', google_auth_callback, name='google_auth_callback'),
+    path('accounts/google/login/callback/', google_auth_callback, name='google_auth_callback'),
     path('user/login/', LoginView.as_view(), name='login'),
     path('user/confirmed_email/', confirm_email_view, name='confirmed_email_view'),
     path('accounts/profile/', ProfileView.as_view(), name='profile'),
