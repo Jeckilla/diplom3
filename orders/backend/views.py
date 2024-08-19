@@ -104,20 +104,24 @@ class LoginView(APIView):
         return render(request=request, template_name='login.html', context=context, status=status.HTTP_200_OK)
 
     def post(self, request):
-        form = LoginForm(request.POST)
-        if not form.is_valid():
-            return Response(data={'message': 'Invalid data'}, status=status.HTTP_400_BAD_REQUEST)
-        user = authenticate(email=request.POST['email'], password=request.POST['password'])
+        form = LoginForm(data=request.POST)
+        if form.is_valid():
+            email = request.data.get('email')
+            password = request.data.get('password')
+            user = authenticate(email=email, password=password)
 
-        if user is not None:
-            response = {
-                'message': 'Login successful',
-                'email': user.email,
-                'Token': user.auth_token.key,
-            }
-            return Response(data=response, status=status.HTTP_200_OK)
+            if user:
+                response = {
+                    'message': 'Login successful',
+                    'email': user.email,
+                    'Token': user.auth_token.key,
+                }
+                auth.login(request, user, user.auth_token.key)
+                return Response(data=response, status=status.HTTP_200_OK)
+            else:
+                return Response(data={'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
         else:
-            return Response(data={'message': 'Invalid email or password'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(data={'message': 'Invalid form data'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ProfileView(APIView):
