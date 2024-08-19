@@ -5,7 +5,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 
 
 from .authentication import social_auth, social_auth_complete, google_auth_complete, google_auth, google_auth_callback
-from .views import PartnerUpdate, ShopList, ShopDetails, LoginView, SignUpView, ContactViewSet, ProductsList, \
+from .views import PartnerUpdate, ShopListView, ShopDetailsView, LoginView, SignUpView, ContactViewSet, ProductsListView, \
     LogoutView, OrderItemViewSet, NewOrderViewSet, CategoryViewSet, OrdersView, PartnerListOrders, \
     PartnerState, ProductInfoView, ProfileView, confirm_email_view, OrderDetailsView, confirm_order, ProductDetailsView
 
@@ -36,9 +36,9 @@ urlpatterns = [
     path('accounts/profile/', ProfileView.as_view(), name='profile'),
     path('accounts/profile_change/', ProfileView.as_view(), name='profile_change'),
     path('user/logout/', LogoutView.as_view(), name='logout'),
-    path('shops/', ShopList.as_view(), name='shop_list'),
-    path('shops/<int:pk>/', ShopDetails.as_view(), name='shop_details'),
-    path('products/', ProductsList.as_view(), name='products'),
+    path('shops/', ShopListView.as_view(), name='shop_list'),
+    path('shops/<int:pk>/', ShopDetailsView.as_view(), name='shop_details'),
+    path('products/', ProductsListView.as_view(), name='products'),
     path('products/<int:pk>/', ProductDetailsView.as_view(), name='product_details'),
     path('product_info/', ProductInfoView.as_view(), name='product_info'),
     path('order/confirm/', NewOrderViewSet.as_view({'post': 'create'}), name='order_confirm'),
@@ -51,5 +51,4 @@ urlpatterns = [
     path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
     path('categories/', CategoryViewSet.as_view({'get': 'list'}), name='category_list'),
     path('contacts/', ContactViewSet.as_view({'get': 'list'}), name='contacts'),
-    # path('sentry-debug/', trigger_error),
 ] + r.urls

@@ -19,6 +19,7 @@ from django.db import IntegrityError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
+from django.views.decorators.cache import cache_page
 from django.views.decorators.http import require_http_methods
 from django_filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
@@ -292,7 +293,6 @@ class PartnerListOrders(APIView):
         get(self, request) for get orders
     """
 
-    pagination_class = [PageNumberPagination]
 
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -310,18 +310,19 @@ class PartnerListOrders(APIView):
         return Response(serializer.data)
 
 
-class ShopList(APIView):
+class ShopListView(APIView):
 
     """View for getting list of shops"""
 
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
+
     def get(self, request):
         shops = Shop.objects.all()
         serializer = ShopSerializer(shops, many=True)
         return Response(serializer.data)
 
 
-class ShopDetails(APIView):
+class ShopDetailsView(APIView):
 
     """View for getting details of shop"""
 
@@ -371,7 +372,7 @@ def generate_thumbnail_path(product_id):
     return thumbnail_path
 
 
-class ProductsList(APIView):
+class ProductsListView(APIView):
 
     """View for getting list of products"""
 
@@ -379,7 +380,8 @@ class ProductsList(APIView):
     filter_backends = [DjangoFilterBackend, OrderingFilter, SearchFilter]
     search_fields = ['model', ]
     filterset_fields = ['category', 'model', 'shop', 'price']
-    pagination_class = [PageNumberPagination]
+    pagination_class = PageNumberPagination
+    page_size = 3
 
     def get(self, request):
         products = Product.objects.all().order_by('name')
@@ -392,7 +394,6 @@ class OrdersView(APIView):
     """View for getting list of orders"""
 
     permission_classes = [IsAuthenticated, IsOwner]
-    pagination_class = [PageNumberPagination]
 
     def get(self, request, *args, **kwargs):
         if not request.user.is_authenticated:
@@ -418,7 +419,6 @@ class OrderDetailsView(APIView):
     """
 
     permission_classes = [IsAuthenticated, IsOwner]
-    pagination_class = [PageNumberPagination]
 
     def get(self, request, pk):
         if not request.user.is_authenticated:
@@ -490,7 +490,6 @@ class ProductInfoView(APIView):
     """View for getting list of product info"""
 
     throttle_classes = [AnonRateThrottle, UserRateThrottle]
-    pagination_class = [PageNumberPagination]
 
     def get(self, request, *args, **kwargs):
         query = Q(shop__state=True)
@@ -613,7 +612,6 @@ class OrderItemViewSet(viewsets.ModelViewSet):
     serializer_class = OrderItemSerializer
     permission_classes = [IsAuthenticated, IsOwner]
 
-
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -649,8 +647,6 @@ class OrderItemViewSet(viewsets.ModelViewSet):
             return Response(status=HTTP_204_NO_CONTENT)
 
 
-
-
 def confirm_email_view(request):
 
     """Function for confirming email"""
@@ -672,5 +668,3 @@ def confirm_email_view(request):
     except ConfirmEmailToken.DoesNotExist:
         data = {'email_confirm': False}
         return JsonResponse(data=data, status=HTTP_400_BAD_REQUEST)
-
-

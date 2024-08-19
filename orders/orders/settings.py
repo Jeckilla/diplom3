@@ -36,6 +36,9 @@ DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = []
 
+if DEBUG:
+    INTERNAL_IPS = ["127.0.0.1"]
+
 
 # Application definition
 
@@ -67,9 +70,11 @@ INSTALLED_APPS = [
     'baton.autodiscover',
     'versatileimagefield',
     'pytest_django',
+    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -177,13 +182,8 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.TokenAuthentication",
     ],
     "DEFAULT_FILTER_BACKENDS": ["django_filters.rest_framework.DjangoFilterBackend"],
-    # "DEFAULT_PERMISSION_CLASSES": [
-    #     "rest_framework.permissions.IsAuthenticatedOrReadOnly",
-    #     "rest_framework.permissions.IsAuthenticated",
-    # ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 5,
-
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
