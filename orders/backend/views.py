@@ -21,6 +21,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.decorators.cache import cache_page
 from django.views.decorators.http import require_http_methods
+from django.views.generic import TemplateView
 from django_filters import OrderingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 from requests import get
@@ -41,6 +42,9 @@ from rest_framework import generics, status, viewsets, permissions
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.renderers import TemplateHTMLRenderer
+
+from django.http import HttpResponseNotFound
+from sentry_sdk import capture_message
 
 from .utils import send_confirmation_email
 from .permissions import IsOwnerOrReadOnly, IsOwner, IsShop

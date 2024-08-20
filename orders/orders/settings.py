@@ -34,7 +34,7 @@ SECRET_KEY = env('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'testserver']
 
 if DEBUG:
     INTERNAL_IPS = ["127.0.0.1"]
@@ -71,6 +71,10 @@ INSTALLED_APPS = [
     'versatileimagefield',
     'pytest_django',
     'debug_toolbar',
+
+    'indexer',
+    'sentry',
+    'sentry.client',
 ]
 
 MIDDLEWARE = [
@@ -221,9 +225,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CELERY_BROKER_URL = "redis://127.0.0.1:16379/0"
 CELERY_RESULT_BACKEND = "redis://localhost:16379/1"
 
-CELERY_CACHE_BACKEND = "default"
+CELERY_CACHE_BACKEND = "redis"
 CASHES = {
-    "default": {
+    "redis": {
         "BACKEND": "django_redis.cache.RedisCache",
         "LOCATION": "redis://127.0.0.1:16379/2",
     }
@@ -315,7 +319,7 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 sentry_sdk.init(
-    dsn="https://8fe19103a66c509edaa5189421850877@o4507783600734208.ingest.de.sentry.io/4507783606042704",
+    dsn=env('DJANGO_SENTRY_DSN'),
     integrations=[DjangoIntegration()],
     # Set traces_sample_rate to 1.0 to capture 100%
     # of transactions for tracing.
@@ -325,3 +329,5 @@ sentry_sdk.init(
     # We recommend adjusting this value in production.
     profiles_sample_rate=1.0,
 )
+
+TEMPLATE_DEBUG = True
